@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>虚拟自习室 - Virtual Study Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   Virtual Study Room - Complete Stylesheet
+   ============================================ */
+:root {
+  --bg-overlay-opacity: 0.45;
+  --glass-bg: rgba(255,255,255,0.25);
+  --glass-border: rgba(255,255,255,0.35);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  --glass-blur: blur(16px);
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --text-muted: #8a8aaa;
+  --accent: #e8835e;
+  --accent-glow: rgba(232,131,94,0.4);
+  --accent2: #5ea3e8;
+  --break-color: #5eb8a0;
+  --break-glow: rgba(94,184,160,0.4);
+  --surface: rgba(255,255,255,0.6);
+  --surface-hover: rgba(255,255,255,0.85);
+  --danger: #e05555;
+  --success: #4caf84;
+  --ring-bg: rgba(255,255,255,0.2);
+  --ring-progress: #e8835e;
+  --btn-primary-bg: #e8835e;
+  --btn-primary-text: #fff;
+  --btn-secondary-bg: rgba(255,255,255,0.5);
+  --btn-secondary-text: #1a1a2e;
+  --input-bg: rgba(255,255,255,0.5);
+  --input-border: rgba(255,255,255,0.4);
+  --scrollbar-thumb: rgba(0,0,0,0.15);
+  --modal-backdrop: rgba(0,0,0,0.4);
+  --dot-empty: rgba(200,200,210,0.4);
+  --heatmap-empty: rgba(200,200,210,0.2);
+  --calendar-today-bg: rgba(232,131,94,0.2);
+  --goal-dot-color: #e8835e;
+}
+[data-theme="dark"] {
+  --bg-overlay-opacity: 0.65;
+  --glass-bg: rgba(30,30,50,0.35);
+  --glass-border: rgba(255,255,255,0.12);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  --glass-blur: blur(20px);
+  --text-primary: #e8e8f0;
+  --text-secondary: #b0b0c8;
+  --text-muted: #7878a0;
+  --surface: rgba(40,40,65,0.6);
+  --surface-hover: rgba(50,50,80,0.85);
+  --ring-bg: rgba(255,255,255,0.08);
+  --btn-secondary-bg: rgba(60,60,85,0.5);
+  --btn-secondary-text: #e8e8f0;
+  --input-bg: rgba(40,40,65,0.5);
+  --input-border: rgba(255,255,255,0.12);
+  --scrollbar-thumb: rgba(255,255,255,0.15);
+  --modal-backdrop: rgba(0,0,0,0.6);
+  --dot-empty: rgba(100,100,130,0.3);
+  --heatmap-empty: rgba(100,100,130,0.15);
+  --calendar-today-bg: rgba(232,131,94,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,sans-serif;color:var(--text-primary);-webkit-font-smoothing:antialiased}
+body{display:flex;justify-content:center;align-items:center;background:#1a1a2e}
+
+/* Background Layer */
+#bg-layer{position:fixed;inset:0;z-index:0;overflow:hidden}
+#bg-image{position:absolute;inset:-20px;background-size:cover;background-position:center;background-repeat:no-repeat;transition:background-image 1.2s ease-in-out}
+#bg-overlay{position:absolute;inset:0;background:rgba(0,0,0,var(--bg-overlay-opacity));transition:background .5s ease}
+#btn-refresh-bg{position:fixed;bottom:80px;right:20px;z-index:10;width:40px;height:40px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass-bg);backdrop-filter:var(--glass-blur);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .3s ease;opacity:.6}
+#btn-refresh-bg:hover{opacity:1;transform:rotate(30deg)}
+
+/* Audio Prompt */
+#audio-prompt{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);cursor:pointer;transition:opacity .5s ease}
+#audio-prompt.hidden{opacity:0;pointer-events:none}
+.prompt-inner{text-align:center;color:#fff;animation:float 3s ease-in-out infinite}
+.prompt-icon{font-size:48px;display:block;margin-bottom:16px}
+.prompt-inner p{font-size:18px;font-weight:300;letter-spacing:.05em}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* App Container */
+#app{position:relative;z-index:1;width:100vw;height:100vh;display:flex;flex-direction:column;padding:12px;gap:10px}
+
+/* Glass Panel */
+.glass-panel{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:20px;backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow)}
+
+/* Top Bar */
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:28px}
+.logo-text{font-size:22px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.3);letter-spacing:.03em}
+.topbar-actions{display:flex;gap:6px}
+.topbar-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);backdrop-filter:var(--glass-blur);color:#fff;font-size:18px;cursor:pointer;transition:all .25s ease;display:flex;align-items:center;justify-content:center}
+.topbar-btn:hover{background:var(--surface-hover);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+
+/* Main Content */
+#main-content{flex:1;display:grid;grid-template-columns:280px 1fr 280px;gap:10px;min-height:0}
+
+/* Task Panel */
+#task-panel{display:flex;flex-direction:column;padding:16px;gap:10px;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between}
+.panel-header h3{font-size:15px;font-weight:600;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.2)}
+.badge{background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;min-width:22px;text-align:center}
+#task-input-area{display:flex;gap:6px}
+#task-input{flex:1;padding:10px 14px;border-radius:12px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;outline:none;transition:all .25s ease}
+#task-input::placeholder{color:var(--text-muted)}
+#task-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);font-size:18px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;flex-shrink:0}
+.icon-btn:hover{background:var(--surface-hover)}
+#task-list{flex:1;list-style:none;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:4px}
+.task-empty{text-align:center;color:var(--text-muted);font-size:13px;padding:30px 0}
+.task-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--surface);transition:all .2s ease;animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.task-item:hover{background:var(--surface-hover)}
+.task-item.completed{opacity:.5}
+.task-checkbox{width:18px;height:18px;border-radius:50%;border:2px solid var(--text-muted);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s ease;background:transparent;padding:0;font-size:10px;color:transparent}
+.task-checkbox:hover{border-color:var(--success)}
+.task-item.completed .task-checkbox{background:var(--success);border-color:var(--success);color:#fff}
+.task-text{flex:1;font-size:13px;color:var(--text-primary);word-break:break-word}
+.task-item.completed .task-text{text-decoration:line-through;color:var(--text-muted)}
+.task-delete{width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .2s ease}
+.task-item:hover .task-delete{opacity:1}
+.task-delete:hover{background:var(--danger);color:#fff}
+.text-btn{padding:6px 14px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-secondary);font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s ease}
+.text-btn:hover{background:var(--surface-hover);color:var(--text-primary)}
+.text-btn.hidden{display:none}
+
+/* Batch Import */
+#batch-import-area{margin-top:2px;display:none;flex-direction:column;gap:6px}
+#batch-import-area.active{display:flex}
+#batch-import-textarea{width:100%;height:100px;padding:10px;border-radius:10px;border:1px solid var(--accent);background:var(--input-bg);color:var(--text-primary);font-size:12px;font-family:inherit;resize:vertical;outline:none}
+#batch-import-textarea::placeholder{color:var(--text-muted)}
+.batch-import-actions{display:flex;gap:6px;justify-content:flex-end}
+.btn-small{padding:5px 12px;border-radius:6px;border:none;font-size:11px;font-family:inherit;cursor:pointer;transition:all .2s ease}
+.btn-small.primary{background:var(--accent);color:#fff}
+.btn-small.primary:hover{opacity:.9}
+.btn-small.cancel{background:var(--surface);color:var(--text-secondary)}
+.btn-small.cancel:hover{background:var(--surface-hover)}
+
+/* Timer Section */
+#timer-section{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
+#timer-container{position:relative;width:240px;height:240px;display:flex;align-items:center;justify-content:center}
+#timer-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--ring-bg);stroke-width:6}
+.ring-progress{fill:none;stroke:var(--ring-progress);stroke-width:6;stroke-linecap:round;stroke-dasharray:553;stroke-dashoffset:0;transition:stroke .5s ease}
+#timer-display{font-family:'JetBrains Mono','Noto Sans SC',monospace;font-size:58px;font-weight:300;color:#fff;text-shadow:0 2px 16px rgba(0,0,0,0.3);letter-spacing:.02em;z-index:1;display:flex;align-items:baseline;gap:2px}
+.timer-sep{animation:blink 1s steps(1) infinite}
+.timer-sep.paused{animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#timer-status-badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:500;color:#fff;background:var(--accent);padding:3px 12px;border-radius:10px;z-index:1;transition:all .3s ease;letter-spacing:.05em}
+#timer-status-badge.break{background:var(--break-color)}
+#timer-label{font-size:18px;font-weight:500;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,0.25)}
+#timer-controls{display:flex;gap:12px}
+.primary-btn{padding:12px 36px;border-radius:14px;border:none;background:var(--btn-primary-bg);color:var(--btn-primary-text);font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .3s ease;box-shadow:0 4px 20px var(--accent-glow);letter-spacing:.03em}
+.primary-btn:hover{transform:translateY(-2px);box-shadow:0 6px 28px var(--accent-glow)}
+.primary-btn:active{transform:translateY(0)}
+.primary-btn.break-mode{background:var(--break-color);box-shadow:0 4px 20px var(--break-glow)}
+.secondary-btn{padding:12px 24px;border-radius:14px;border:1px solid var(--glass-border);background:var(--btn-secondary-bg);backdrop-filter:var(--glass-blur);color:var(--btn-secondary-text);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .3s ease}
+.secondary-btn:hover{background:var(--surface-hover);transform:translateY(-2px)}
+#session-dots{display:flex;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--dot-empty);transition:all .3s ease}
+.dot.filled{background:var(--accent);box-shadow:0 0 8px var(--accent-glow)}
+.dot.filled.break-dot{background:var(--break-color)}
+#mode-selector{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.mode-btn{padding:6px 14px;border-radius:10px;border:1px solid var(--glass-border);background:var(--glass-bg);backdrop-filter:var(--glass-blur);color:#fff;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .25s ease}
+.mode-btn:hover{background:var(--surface-hover)}
+.mode-btn.active{background:var(--accent);border-color:var(--accent);box-shadow:0 2px 12px var(--accent-glow)}
+#today-summary{font-size:14px;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.2);display:flex;align-items:center;gap:6px}
+
+/* Info Panel */
+#info-panel{padding:0;display:flex;flex-direction:column;overflow:hidden}
+.panel-tabs{display:flex;padding:8px 12px 0;gap:4px;flex-shrink:0}
+.panel-tab{padding:6px 14px;border-radius:10px 10px 0 0;border:none;background:transparent;color:var(--text-muted);font-size:12px;font-family:inherit;cursor:pointer;transition:all .2s ease}
+.panel-tab.active{background:var(--surface);color:var(--text-primary);font-weight:600}
+.panel-tab:hover:not(.active){color:var(--text-secondary)}
+.tab-content{display:none;flex-direction:column;gap:10px;padding:12px;overflow-y:auto;flex:1}
+.tab-content.active{display:flex}
+.info-card{padding:12px;border-radius:12px;background:var(--surface)}
+.info-label{font-size:11px;color:var(--text-muted);margin-bottom:4px}
+.info-value{font-size:18px;font-weight:600;color:var(--text-primary)}
+.custom-inputs{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.custom-inputs label{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-secondary)}
+.custom-inputs input{width:60px;padding:4px 8px;border-radius:6px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;text-align:center;outline:none}
+.custom-inputs input:focus{border-color:var(--accent)}
+#btn-apply-custom{align-self:flex-end;margin-top:4px}
+
+/* Monthly Calendar in Info Panel */
+#calendar-view{display:flex;flex-direction:column;gap:6px;flex:1}
+.calendar-nav{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.calendar-nav button{width:26px;height:26px;border-radius:50%;border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-primary);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+.calendar-nav button:hover{background:var(--surface-hover)}
+.calendar-month-label{font-size:13px;font-weight:600;color:var(--text-primary)}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.calendar-day-header{font-size:10px;color:var(--text-muted);padding:4px 0}
+.calendar-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;font-size:11px;cursor:pointer;transition:all .15s ease;position:relative;color:var(--text-primary)}
+.calendar-day:hover{background:var(--surface)}
+.calendar-day.today{background:var(--calendar-today-bg);font-weight:700}
+.calendar-day.other-month{color:var(--text-muted);opacity:.4;cursor:default}
+.calendar-day.has-goal::after{content:'';position:absolute;bottom:2px;width:5px;height:5px;border-radius:50%;background:var(--goal-dot-color)}
+.calendar-day.selected{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* Calendar goal mini-editor */
+#goal-mini-editor{display:none;padding:8px;border-radius:10px;background:var(--surface);gap:6px;flex-direction:column}
+#goal-mini-editor.active{display:flex}
+#goal-date-label{font-size:12px;color:var(--accent);font-weight:600}
+#goal-text-input{width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text-primary);font-size:12px;font-family:inherit;outline:none}
+#goal-text-input:focus{border-color:var(--accent)}
+.goal-mini-actions{display:flex;gap:4px;justify-content:flex-end}
+
+/* Audio Bar */
+#audio-bar{display:flex;align-items:center;padding:10px 20px;gap:16px;flex-shrink:0}
+.audio-left{display:flex;align-items:center;gap:8px}
+.sound-select{padding:8px 12px;border-radius:10px;border:1px solid var(--input-border);background:var(--input-bg);color:var(--text-primary);font-size:13px;font-family:inherit;cursor:pointer;outline:none;min-width:140px}
+.sound-select:focus{border-color:var(--accent)}
+.audio-center{flex:1;text-align:center}
+.now-playing{font-size:12px;color:var(--text-muted)}
+.audio-right{display:flex;align-items:center;gap:10px}
+.volume-slider{width:100px;accent-color:var(--accent);cursor:pointer}
+#volume-label{font-size:12px;color:var(--text-muted);min-width:32px;text-align:right}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:40px}
+.modal.active{display:flex;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-backdrop{position:absolute;inset:0;background:var(--modal-backdrop);backdrop-filter:blur(2px)}
+.modal-content{position:relative;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;padding:28px;animation:scaleIn .3s ease}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--glass-border)}
+.modal-header h2{font-size:22px;font-weight:600;color:var(--text-primary)}
+.modal-close{width:36px;height:36px;border-radius:50%;border:none;background:var(--surface);color:var(--text-primary);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease}
+.modal-close:hover{background:var(--danger);color:#fff}
+
+/* Stats */
+.stats-summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{text-align:center;padding:16px;border-radius:14px;background:var(--surface)}
+.stat-number{font-size:28px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace}
+.stat-label{font-size:12px;color:var(--text-muted);margin-top:4px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-container{padding:16px;border-radius:14px;background:var(--surface)}
+.chart-container h4{font-size:13px;color:var(--text-secondary);margin-bottom:12px;text-align:center}
+.chart-container canvas{max-height:220px}
+.heatmap-container{padding:16px;border-radius:14px;background:var(--surface);margin-bottom:16px}
+.heatmap-container h4{font-size:13px;color:var(--text-secondary);margin-bottom:12px;text-align:center}
+#heatmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:8px;font-size:10px}
+.heatmap-day-header{text-align:center;color:var(--text-muted);padding:2px}
+.heatmap-cell{aspect-ratio:1;border-radius:3px;background:var(--heatmap-empty);transition:all .2s ease;cursor:pointer;position:relative}
+.heatmap-cell:hover{transform:scale(1.3);z-index:1}
+.heatmap-cell.level-0{background:var(--heatmap-empty)}
+.heatmap-cell.level-1{background:rgba(232,131,94,0.25)}
+.heatmap-cell.level-2{background:rgba(232,131,94,0.45)}
+.heatmap-cell.level-3{background:rgba(232,131,94,0.65)}
+.heatmap-cell.level-4{background:rgba(232,131,94,0.85)}
+.heatmap-legend{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10px;color:var(--text-muted)}
+.legend-block{width:14px;height:14px;border-radius:3px}
+
+/* Achievements */
+#achievements-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.achievement-card{padding:16px;border-radius:14px;background:var(--surface);text-align:center;transition:all .3s ease}
+.achievement-card.locked{opacity:.4;filter:grayscale(0.8)}
+.achievement-card.unlocked{border:1px solid rgba(255,215,0,0.3);box-shadow:0 0 20px rgba(255,215,0,0.1)}
+.achievement-icon{font-size:36px;margin-bottom:8px}
+.achievement-name{font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px}
+.achievement-desc{font-size:11px;color:var(--text-muted)}
+.achievement-date{font-size:10px;color:var(--accent);margin-top:4px}
+
+/* Toast */
+#toast-container{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:12px;background:var(--surface);border:1px solid var(--glass-border);backdrop-filter:var(--glass-blur);color:var(--text-primary);font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,0.15);animation:slideToast .4s ease,fadeOut .4s ease 2.6s forwards;max-width:320px}
+@keyframes slideToast{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+
+/* Scrollbar */
+.scrollable::-webkit-scrollbar{width:4px}
+.scrollable::-webkit-scrollbar-track{background:transparent}
+.scrollable::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:2px}
+
+/* Responsive */
+@media(max-width:1024px){
+  #main-content{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;overflow-y:auto}
+  #task-panel{max-height:200px}
+  #info-panel{max-height:250px}
+  #timer-container{width:180px;height:180px}
+  #timer-display{font-size:42px}
+  .charts-grid{grid-template-columns:1fr}
+  .stats-summary-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:640px){
+  #app{padding:6px;gap:6px}
+  #timer-container{width:150px;height:150px}
+  #timer-display{font-size:34px}
+  #timer-controls{flex-direction:column}
+  .modal-content{padding:16px}
+  .modal{padding:16px}
+  #audio-bar{flex-direction:column;gap:8px}
+  #main-content{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- Background Layer -->
+<div id="bg-layer">
+  <div id="bg-image"></div>
+  <div id="bg-overlay"></div>
+</div>
+<button id="btn-refresh-bg" title="切换背景">🖼️</button>
+
+<!-- Audio Context Prompt -->
+<div id="audio-prompt" class="hidden">
+  <div class="prompt-inner">
+    <span class="prompt-icon">🔔</span>
+    <p>点击任意位置开始体验</p>
+  </div>
+</div>
+
+<!-- Main App Container -->
+<div id="app">
+  <!-- Top Bar -->
+  <header id="topbar">
+    <div class="logo">
+      <span class="logo-icon">📚</span>
+      <span class="logo-text">虚拟自习室</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-stats" class="topbar-btn" title="统计">📊</button>
+      <button id="btn-achievements" class="topbar-btn" title="成就">🏆</button>
+      <button id="btn-theme" class="topbar-btn" title="切换主题">🌓</button>
+      <button id="btn-fullscreen" class="topbar-btn" title="全屏">⛶</button>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main id="main-content">
+    <!-- Left: Task Panel -->
+    <aside id="task-panel" class="glass-panel">
+      <div class="panel-header">
+        <h3>📋 今日任务</h3>
+        <span id="task-count" class="badge">0</span>
+      </div>
+      <div id="task-input-area">
+        <input type="text" id="task-input" placeholder="添加新任务，按 Enter 确认..." maxlength="200">
+        <button id="btn-add-task" class="icon-btn" title="添加">＋</button>
+        <button id="btn-batch-import" class="icon-btn" title="批量导入">📥</button>
+      </div>
+      <div id="batch-import-area">
+        <textarea id="batch-import-textarea" placeholder="每行一个任务，粘贴后点击导入..."></textarea>
+        <div class="batch-import-actions">
+          <button id="btn-cancel-batch" class="btn-small cancel">取消</button>
+          <button id="btn-confirm-batch" class="btn-small primary">导入全部</button>
+        </div>
+      </div>
+      <ul id="task-list" class="scrollable">
+        <li class="task-empty">✨ 暂无任务，添加一个吧</li>
+      </ul>
+      <button id="btn-clear-completed" class="text-btn hidden">清除已完成</button>
+    </aside>
+
+    <!-- Center: Pomodoro Timer -->
+    <section id="timer-section">
+      <div id="timer-container">
+        <svg id="timer-ring" viewBox="0 0 200 200">
+          <circle class="ring-bg" cx="100" cy="100" r="88"/>
+          <circle class="ring-progress" cx="100" cy="100" r="88"/>
+        </svg>
+        <div id="timer-display">
+          <span id="timer-minutes">25</span>
+          <span class="timer-sep">:</span>
+          <span id="timer-seconds">00</span>
+        </div>
+        <div id="timer-status-badge">就绪</div>
+      </div>
+      <div id="timer-label">专注时间</div>
+      <div id="timer-controls">
+        <button id="btn-start-pause" class="primary-btn">开始专注</button>
+        <button id="btn-reset" class="secondary-btn">重置</button>
+      </div>
+      <div id="session-dots">
+        <span class="dot filled"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+      <div id="mode-selector">
+        <button class="mode-btn active" data-work="25" data-break="5">25 + 5</button>
+        <button class="mode-btn" data-work="45" data-break="10">45 + 10</button>
+        <button class="mode-btn" data-work="50" data-break="10">50 + 10</button>
+        <button class="mode-btn" data-work="15" data-break="3">15 + 3</button>
+      </div>
+      <div id="today-summary">
+        <span class="summary-icon">🔥</span>
+        <span id="today-focus-time">今日专注: 0 分钟</span>
+      </div>
+    </section>
+
+    <!-- Right: Info + Calendar Panel -->
+    <aside id="info-panel" class="glass-panel">
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="overview">📊 概览</button>
+        <button class="panel-tab" data-tab="calendar">📅 月计划</button>
+      </div>
+      <div id="tab-overview" class="tab-content active scrollable">
+        <div class="info-card">
+          <div class="info-label">🕐 当前时间</div>
+          <div id="current-clock" class="info-value">--:--:--</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">📅 今日日期</div>
+          <div id="current-date" class="info-value">----年--月--日</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">🔥 连续天数</div>
+          <div id="streak-days" class="info-value">0 天</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">⏱️ 总专注时长</div>
+          <div id="total-hours" class="info-value">0 小时</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">⚙️ 自定义时长 (分钟)</div>
+          <div class="custom-inputs">
+            <label>专注 <input type="number" id="custom-work" min="1" max="120" value="25"></label>
+            <label>休息 <input type="number" id="custom-break" min="1" max="60" value="5"></label>
+            <button id="btn-apply-custom" class="text-btn">应用</button>
+          </div>
+        </div>
+      </div>
+      <div id="tab-calendar" class="tab-content scrollable">
+        <div id="calendar-view">
+          <div class="calendar-nav">
+            <button id="cal-prev-month" title="上月">◀</button>
+            <span id="cal-month-label" class="calendar-month-label"></span>
+            <button id="cal-next-month" title="下月">▶</button>
+          </div>
+          <div class="calendar-grid" id="cal-day-headers"></div>
+          <div class="calendar-grid" id="cal-days-grid"></div>
+          <div id="goal-mini-editor">
+            <div id="goal-date-label"></div>
+            <input type="text" id="goal-text-input" placeholder="输入目标描述..." maxlength="100">
+            <div class="goal-mini-actions">
+              <button id="btn-goal-delete" class="btn-small cancel">删除目标</button>
+              <button id="btn-goal-save" class="btn-small primary">保存</button>
+            </div>
+          </div>
+          <div id="cal-goal-list" style="font-size:11px;color:var(--text-secondary);margin-top:4px"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Audio Bar -->
+  <footer id="audio-bar" class="glass-panel">
+    <div class="audio-left">
+      <select id="sound-select" class="sound-select">
+        <option value="none">🔇 无声音</option>
+        <optgroup label="🌿 白噪音">
+          <option value="rain">🌧️ 雨声</option>
+          <option value="cafe">☕ 咖啡厅</option>
+          <option value="fireplace">🔥 篝火</option>
+          <option value="ocean">🌊 海浪</option>
+          <option value="forest">🌲 森林鸟鸣</option>
+          <option value="wind">💨 风声</option>
+        </optgroup>
+        <optgroup label="🎵 轻音乐">
+          <option value="lofi1">🎹 钢琴轻音</option>
+          <option value="lofi2">🎸 吉他慢奏</option>
+          <option value="lofi3">🎻 大提琴</option>
+        </optgroup>
+      </select>
+      <button id="btn-play-audio" class="icon-btn" title="播放/暂停">▶️</button>
+    </div>
+    <div class="audio-center">
+      <span id="now-playing" class="now-playing">未播放</span>
+    </div>
+    <div class="audio-right">
+      <button id="btn-mute" class="icon-btn" title="静音">🔊</button>
+      <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50" title="音量">
+      <span id="volume-label">50%</span>
+    </div>
+  </footer>
+</div>
+
+<!-- Stats Modal -->
+<div id="stats-modal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content glass-panel">
+    <div class="modal-header">
+      <h2>📊 专注统计</h2>
+      <button class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="stats-summary-row">
+        <div class="stat-card"><div class="stat-number" id="stat-today-minutes">0</div><div class="stat-label">今日/分钟</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-weekly-hours">0</div><div class="stat-label">本周/小时</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-monthly-hours">0</div><div class="stat-label">本月/小时</div></div>
+        <div class="stat-card"><div class="stat-number" id="stat-total-hours-all">0</div><div class="stat-label">总计/小时</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-container"><h4>📅 本周每日时长</h4><canvas id="chart-weekly"></canvas></div>
+        <div class="chart-container"><h4>📆 本月趋势</h4><canvas id="chart-monthly"></canvas></div>
+      </div>
+      <div class="heatmap-container">
+        <h4>🗓️ 月度专注热力图</h4>
+        <div id="heatmap-grid"></div>
+        <div class="heatmap-legend">
+          <span>少</span><span class="legend-block level-0"></span><span class="legend-block level-1"></span><span class="legend-block level-2"></span><span class="legend-block level-3"></span><span class="legend-block level-4"></span><span>多</span>
+        </div>
+      </div>
+      <button id="btn-export-data" class="secondary-btn">📥 导出数据 (JSON)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Achievements Modal -->
+<div id="achievements-modal" class="modal">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content glass-panel">
+    <div class="modal-header">
+      <h2>🏆 成就徽章</h2>
+      <button class="modal-close">&times;</button>
+    </div>
+    <div class="modal-body"><div id="achievements-grid"></div></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+/* ============================================
+   background.js - Background image management
+   ============================================ */
+const Background = {
+  currentIndex: 0,
+  fallbackGradients: [
+    'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    'linear-gradient(135deg, #2d1b69 0%, #1b3a4b 50%, #1a5e3f 100%)',
+    'linear-gradient(135deg, #3a1c71 0%, #4a2c6e 50%, #1e3c5c 100%)',
+    'linear-gradient(135deg, #0c1b33 0%, #1a3a5c 50%, #2d5a3f 100%)',
+    'linear-gradient(135deg, #1a1a3e 0%, #2d1b4e 50%, #3a2a5e 100%)',
+  ],
+  photoIds: [
+    'photo-1507003211169-0a1dd7228f2d','photo-1499209974431-9dddcece7f88','photo-1512820792206-6004efcf6e2b',
+    'photo-1440778303588-435521a205bc','photo-1518659522319-8fc7d1d5822d','photo-1507525428034-b723cf961d3e',
+    'photo-1506126613408-eca07ce68773','photo-1470770841072-f978cf4d019e','photo-1432821596592-2c1d78e7b7c2',
+    'photo-1452421822248-d4c2b47f0c81','photo-1518837695005-2083093ee35b','photo-1505144808419-1957a94ca61e',
+  ],
+  init() {
+    this.el = document.getElementById('bg-image');
+    this.loadRandomImage();
+    document.getElementById('btn-refresh-bg').addEventListener('click', () => this.loadRandomImage());
+  },
+  getImageUrl() {
+    const id = this.photoIds[Math.floor(Math.random() * this.photoIds.length)];
+    return 'https://images.unsplash.com/' + id + '?w=1920&h=1080&fit=crop&auto=format';
+  },
+  loadRandomImage() {
+    const url = this.getImageUrl();
+    const img = new Image();
+    img.onload = () => { this.el.style.backgroundImage = 'url(' + url + ')'; };
+    img.onerror = () => {
+      const grad = this.fallbackGradients[this.currentIndex % this.fallbackGradients.length];
+      this.currentIndex++;
+      this.el.style.backgroundImage = grad;
+    };
+    img.src = url;
+  },
+};
+</script>
+<script>
+/* ============================================
+   audio.js - Ambient sound generation
+   ============================================ */
+const AudioEngine = {
+  ctx: null, masterGain: null, noiseNodes: [], musicNodes: [],
+  isPlaying: false, currentSound: 'none', volume: 0.5, isMuted: false,
+
+  init() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.value = this.volume;
+    this.masterGain.connect(this.ctx.destination);
+    this.bindUI();
+    this.loadSettings();
+  },
+  bindUI() {
+    document.getElementById('sound-select').addEventListener('change', (e) => { this.selectSound(e.target.value); });
+    document.getElementById('btn-play-audio').addEventListener('click', () => { this.togglePlay(); });
+    document.getElementById('btn-mute').addEventListener('click', () => { this.toggleMute(); });
+    document.getElementById('volume-slider').addEventListener('input', (e) => { this.setVolume(e.target.value / 100); });
+    const resumeCtx = () => { if (this.ctx.state === 'suspended') this.ctx.resume(); };
+    document.addEventListener('click', resumeCtx, { once: true });
+  },
+  loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('audioSettings'));
+      if (s) {
+        this.volume = s.volume ?? 0.5; this.isMuted = s.isMuted ?? false; this.currentSound = s.currentSound ?? 'none';
+        document.getElementById('volume-slider').value = this.volume * 100;
+        document.getElementById('volume-label').textContent = Math.round(this.volume * 100) + '%';
+        document.getElementById('sound-select').value = this.currentSound;
+        if (this.isMuted) document.getElementById('btn-mute').textContent = '🔇';
+        this.masterGain.gain.value = this.isMuted ? 0 : this.volume;
+      }
+    } catch(e) {}
+  },
+  saveSettings() {
+    localStorage.setItem('audioSettings', JSON.stringify({ volume: this.volume, isMuted: this.isMuted, currentSound: this.currentSound }));
+  },
+  async selectSound(sound) {
+    this.stopAll();
+    this.currentSound = sound;
+    this.saveSettings();
+    const label = document.getElementById('sound-select').selectedOptions[0]?.text || '未播放';
+    document.getElementById('now-playing').textContent = label;
+    if (sound === 'none') { this.isPlaying = false; document.getElementById('btn-play-audio').textContent = '▶️'; return; }
+    await this.ctx.resume();
+    this.startSound(sound);
+    this.isPlaying = true;
+    document.getElementById('btn-play-audio').textContent = '⏸️';
+  },
+  togglePlay() {
+    if (this.currentSound === 'none') { document.getElementById('sound-select').value = 'rain'; this.selectSound('rain'); return; }
+    if (this.isPlaying) { this.stopAll(); this.isPlaying = false; document.getElementById('btn-play-audio').textContent = '▶️'; }
+    else { this.ctx.resume().then(() => { this.startSound(this.currentSound); this.isPlaying = true; document.getElementById('btn-play-audio').textContent = '⏸️'; }); }
+  },
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    document.getElementById('btn-mute').textContent = this.isMuted ? '🔇' : '🔊';
+    this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : this.volume, this.ctx.currentTime, 0.1);
+    this.saveSettings();
+  },
+  setVolume(v) {
+    this.volume = v;
+    document.getElementById('volume-label').textContent = Math.round(v * 100) + '%';
+    if (!this.isMuted) this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1);
+    this.saveSettings();
+  },
+  stopAll() {
+    this.noiseNodes.forEach(n => { try { n.stop(); } catch(e) {} try { n.disconnect(); } catch(e) {} });
+    this.noiseNodes = [];
+    this.musicNodes.forEach(n => { try { n.stop(); } catch(e) {} try { n.disconnect(); } catch(e) {} });
+    this.musicNodes = [];
+  },
+  startSound(sound) {
+    switch(sound) {
+      case 'rain': this.createRain(); break;
+      case 'cafe': this.createCafe(); break;
+      case 'fireplace': this.createFireplace(); break;
+      case 'ocean': this.createOcean(); break;
+      case 'forest': this.createForest(); break;
+      case 'wind': this.createWind(); break;
+      case 'lofi1': this.createLofi1(); break;
+      case 'lofi2': this.createLofi2(); break;
+      case 'lofi3': this.createLofi3(); break;
+    }
+  },
+  createNoiseBuffer(duration) {
+    duration = duration || 4;
+    const size = this.ctx.sampleRate * duration;
+    const buf = this.ctx.createBuffer(1, size, this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+    return buf;
+  },
+  createFilteredNoise(type, freq, q) {
+    q = q || 1;
+    const buf = this.createNoiseBuffer();
+    const src = this.ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const filter = this.ctx.createBiquadFilter(); filter.type = type; filter.frequency.value = freq; filter.Q.value = q;
+    const gain = this.ctx.createGain(); gain.gain.value = 0;
+    src.connect(filter); filter.connect(gain); gain.connect(this.masterGain);
+    src.start();
+    this.noiseNodes.push(src);
+    return { src: src, gain: gain, filter: filter };
+  },
+  createRain() {
+    const a = this.createFilteredNoise('highpass', 1000, 0.5);
+    const b = this.createFilteredNoise('bandpass', 3000, 0.3);
+    a.gain.gain.setTargetAtTime(0.15, this.ctx.currentTime, 0.5);
+    b.gain.gain.setTargetAtTime(0.08, this.ctx.currentTime, 0.5);
+    this.addRainDrops();
+  },
+  addRainDrops() {
+    const self = this;
+    const interval = setInterval(() => {
+      if (!self.isPlaying || self.currentSound !== 'rain') { clearInterval(interval); return; }
+      const osc = self.ctx.createOscillator();
+      const g = self.ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 600 + Math.random() * 800;
+      g.gain.setValueAtTime(0.03, self.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, self.ctx.currentTime + 0.15);
+      osc.connect(g); g.connect(self.masterGain);
+      osc.start(); osc.stop(self.ctx.currentTime + 0.15);
+      self.noiseNodes.push(osc);
+    }, 400 + Math.random() * 600);
+    this.noiseNodes.push({ stop: function() { clearInterval(interval); }, disconnect: function() {} });
+  },
+  createCafe() {
+    const a = this.createFilteredNoise('lowpass', 800, 0.5);
+    a.gain.gain.setTargetAtTime(0.12, this.ctx.currentTime, 0.5);
+    const self = this;
+    const interval = setInterval(() => {
+      if (!self.isPlaying || self.currentSound !== 'cafe') { clearInterval(interval); return; }
+      const osc = self.ctx.createOscillator(); const g = self.ctx.createGain();
+      osc.type = 'triangle'; osc.frequency.value = 150 + Math.random() * 200;
+      g.gain.setValueAtTime(0.02, self.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, self.ctx.currentTime + 0.3);
+      osc.connect(g); g.connect(self.masterGain);
+      osc.start(); osc.stop(self.ctx.currentTime + 0.3);
+      self.noiseNodes.push(osc);
+    }, 200);
+    this.noiseNodes.push({ stop: function() { clearInterval(interval); }, disconnect: function() {} });
+  },
+  createFireplace() {
+    const a = this.createFilteredNoise('lowpass', 400, 2);
+    a.gain.gain.setTargetAtTime(0.18, this.ctx.currentTime, 0.5);
+    const self = this;
+    const interval = setInterval(() => {
+      if (!self.isPlaying || self.currentSound !== 'fireplace') { clearInterval(interval); return; }
+      const buf = self.createNoiseBuffer(0.05);
+      const src = self.ctx.createBufferSource(); src.buffer = buf;
+      const g = self.ctx.createGain();
+      const f = self.ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2000;
+      g.gain.setValueAtTime(0.05 * Math.random(), self.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, self.ctx.currentTime + 0.05);
+      src.connect(f); f.connect(g); g.connect(self.masterGain);
+      src.start();
+      self.noiseNodes.push(src);
+    }, 80 + Math.random() * 200);
+    this.noiseNodes.push({ stop: function() { clearInterval(interval); }, disconnect: function() {} });
+  },
+  createOcean() {
+    const a = this.createFilteredNoise('lowpass', 600, 0.3);
+    a.gain.gain.setTargetAtTime(0.2, this.ctx.currentTime, 1);
+    const lfo = this.ctx.createOscillator();
+    const lfoGain = this.ctx.createGain();
+    lfo.frequency.value = 0.08; lfoGain.gain.value = 300;
+    lfo.connect(lfoGain); lfoGain.connect(a.filter.frequency);
+    lfo.start();
+    this.noiseNodes.push(lfo);
+  },
+  createForest() {
+    const a = this.createFilteredNoise('bandpass', 2000, 0.5);
+    a.gain.gain.setTargetAtTime(0.08, this.ctx.currentTime, 0.5);
+    const self = this;
+    const birdNotes = [1200, 1400, 1600, 1800, 2000, 2400, 2800];
+    const interval = setInterval(() => {
+      if (!self.isPlaying || self.currentSound !== 'forest') { clearInterval(interval); return; }
+      if (Math.random() > 0.3) return;
+      const osc = self.ctx.createOscillator(); const g = self.ctx.createGain();
+      osc.type = 'sine';
+      const freq = birdNotes[Math.floor(Math.random() * birdNotes.length)];
+      osc.frequency.setValueAtTime(freq, self.ctx.currentTime);
+      osc.frequency.setValueAtTime(freq * 1.1, self.ctx.currentTime + 0.1);
+      g.gain.setValueAtTime(0, self.ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0.04, self.ctx.currentTime + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, self.ctx.currentTime + 0.4);
+      osc.connect(g); g.connect(self.masterGain);
+      osc.start(); osc.stop(self.ctx.currentTime + 0.4);
+      self.noiseNodes.push(osc);
+    }, 2000 + Math.random() * 3000);
+    this.noiseNodes.push({ stop: function() { clearInterval(interval); }, disconnect: function() {} });
+  },
+  createWind() {
+    const a = this.createFilteredNoise('lowpass', 300, 1);
+    a.gain.gain.setTargetAtTime(0.15, this.ctx.currentTime, 1);
+    const lfo = this.ctx.createOscillator();
+    const lfoGain = this.ctx.createGain();
+    lfo.frequency.value = 0.05; lfoGain.gain.value = 150;
+    lfo.connect(lfoGain); lfoGain.connect(a.filter.frequency);
+    lfo.start();
+    this.noiseNodes.push(lfo);
+  },
+  noteToFreq(note) {
+    const notes = { C:0, 'C#':1, D:2, 'D#':3, E:4, F:5, 'F#':6, G:7, 'G#':8, A:9, 'A#':10, B:11 };
+    const name = note.replace(/\d/, '');
+    const octave = parseInt(note.match(/\d/)[0]);
+    return 440 * Math.pow(2, (notes[name] - 9 + (octave - 4) * 12) / 12);
+  },
+  createLofi1() { this.playChordProgression([['C4','E4','G4'],['A3','C4','E4'],['F3','A3','C4'],['G3','B3','D4']], 0.04, 'sine'); },
+  createLofi2() { this.playChordProgression([['D4','F#4','A4'],['B3','D4','F#4'],['G3','B3','D4'],['A3','C#4','E4']], 0.03, 'triangle'); },
+  createLofi3() { this.playChordProgression([['E3','G3','B3'],['C3','E3','G3'],['A2','C3','E3'],['B2','D#3','F#3']], 0.05, 'sine'); },
+  playChordProgression(chords, vol, waveform) {
+    var time = this.ctx.currentTime;
+    var chordDuration = 2.5;
+    var self = this;
+    var playLoop = function() {
+      if (!self.isPlaying || !self.currentSound.startsWith('lofi')) return;
+      chords.forEach(function(chord) {
+        chord.forEach(function(note) {
+          var osc = self.ctx.createOscillator();
+          var g = self.ctx.createGain();
+          osc.type = waveform;
+          osc.frequency.value = self.noteToFreq(note);
+          osc.detune.value = (Math.random() - 0.5) * 10;
+          g.gain.setValueAtTime(0, time);
+          g.gain.linearRampToValueAtTime(vol, time + 0.3);
+          g.gain.setValueAtTime(vol, time + chordDuration - 0.3);
+          g.gain.linearRampToValueAtTime(0, time + chordDuration);
+          osc.connect(g); g.connect(self.masterGain);
+          osc.start(time); osc.stop(time + chordDuration + 0.1);
+          self.musicNodes.push(osc);
+        });
+        time += chordDuration;
+      });
+      var loopDelay = chords.length * chordDuration * 1000;
+      var timer = setTimeout(function() { playLoop(); }, loopDelay - 100);
+      self.musicNodes.push({ stop: function() { clearTimeout(timer); }, disconnect: function() {} });
+    };
+    playLoop();
+  },
+};
+</script>
+<script>
+/* ============================================
+   timer.js - Pomodoro Timer
+   ============================================ */
+const PomodoroTimer = {
+  workDuration: 25 * 60, breakDuration: 5 * 60, longBreakDuration: 15 * 60, sessionsBeforeLongBreak: 4,
+  remaining: 25 * 60, total: 25 * 60, isRunning: false, isWork: true, sessionCount: 0, intervalId: null,
+  todayMinutes: 0, currentSessionStart: null,
+
+  init() {
+    this.loadSettings(); this.loadTodayData(); this.bindUI(); this.render();
+    this.updateClock(); this.updateDate();
+    setInterval(() => this.updateClock(), 1000);
+  },
+  bindUI() {
+    document.getElementById('btn-start-pause').addEventListener('click', () => this.toggle());
+    document.getElementById('btn-reset').addEventListener('click', () => this.reset());
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.setDurations(parseInt(btn.dataset.work), parseInt(btn.dataset.break));
+        this.reset();
+      });
+    });
+    document.getElementById('btn-apply-custom').addEventListener('click', () => {
+      const w = parseInt(document.getElementById('custom-work').value) || 25;
+      const b = parseInt(document.getElementById('custom-break').value) || 5;
+      this.setDurations(Math.max(1, Math.min(120, w)), Math.max(1, Math.min(60, b)));
+      document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+      this.reset();
+    });
+  },
+  loadSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem('timerSettings'));
+      if (s) {
+        this.workDuration = s.workDuration ?? 25 * 60;
+        this.breakDuration = s.breakDuration ?? 5 * 60;
+        this.longBreakDuration = s.longBreakDuration ?? 15 * 60;
+        this.sessionsBeforeLongBreak = s.sessionsBeforeLongBreak ?? 4;
+        this.sessionCount = s.sessionCount ?? 0;
+        this.isWork = s.isWork ?? true;
+      }
+    } catch(e) {}
+    this.remaining = this.isWork ? this.workDuration : this.breakDuration;
+    this.total = this.remaining;
+    document.getElementById('custom-work').value = this.workDuration / 60;
+    document.getElementById('custom-break').value = this.breakDuration / 60;
+  },
+  saveSettings() {
+    localStorage.setItem('timerSettings', JSON.stringify({
+      workDuration: this.workDuration, breakDuration: this.breakDuration,
+      longBreakDuration: this.longBreakDuration, sessionsBeforeLongBreak: this.sessionsBeforeLongBreak,
+      sessionCount: this.sessionCount, isWork: this.isWork,
+    }));
+  },
+  loadTodayData() {
+    const today = this.getDateString();
+    try {
+      const data = JSON.parse(localStorage.getItem('dailyData'));
+      if (data && data.date === today) this.todayMinutes = data.minutes || 0;
+    } catch(e) {}
+    this.updateTodayDisplay();
+  },
+  getDateString() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  },
+  setDurations(workMin, breakMin) {
+    this.workDuration = workMin * 60; this.breakDuration = breakMin * 60;
+    this.remaining = this.workDuration; this.total = this.workDuration;
+    this.isWork = true;
+    this.saveSettings();
+  },
+  toggle() { this.isRunning ? this.pause() : this.start(); },
+  start() {
+    if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+    this.isRunning = true;
+    if (!this.currentSessionStart) this.currentSessionStart = Date.now();
+    const btn = document.getElementById('btn-start-pause');
+    btn.textContent = '暂停'; btn.classList.add('break-mode');
+    document.querySelector('.timer-sep').classList.remove('paused');
+    document.getElementById('timer-status-badge').textContent = this.isWork ? '专注中' : '休息中';
+    this.intervalId = setInterval(() => this.tick(), 1000);
+  },
+  pause() {
+    this.isRunning = false; clearInterval(this.intervalId); this.intervalId = null;
+    document.getElementById('btn-start-pause').textContent = '继续';
+    document.querySelector('.timer-sep').classList.add('paused');
+    document.getElementById('timer-status-badge').textContent = '已暂停';
+  },
+  reset() {
+    this.isRunning = false; clearInterval(this.intervalId); this.intervalId = null;
+    this.currentSessionStart = null;
+    this.remaining = this.isWork ? this.workDuration : this.breakDuration;
+    this.total = this.remaining;
+    document.getElementById('btn-start-pause').textContent = this.isWork ? '开始专注' : '开始休息';
+    document.getElementById('btn-start-pause').classList.remove('break-mode');
+    document.querySelector('.timer-sep').classList.add('paused');
+    document.getElementById('timer-status-badge').textContent = '就绪';
+    document.getElementById('timer-label').textContent = this.isWork ? '专注时间' : '休息时间';
+    this.render();
+  },
+  tick() { this.remaining--; this.render(); if (this.remaining <= 0) this.complete(); },
+  complete() {
+    clearInterval(this.intervalId); this.intervalId = null; this.isRunning = false;
+    this.playChime();
+    if (this.isWork) {
+      const durationMinutes = Math.round((Date.now() - this.currentSessionStart) / 60000);
+      this.recordSession(durationMinutes);
+      this.sessionCount++;
+      const isLongBreak = this.sessionCount % this.sessionsBeforeLongBreak === 0;
+      this.isWork = false;
+      this.remaining = isLongBreak ? this.longBreakDuration : this.breakDuration;
+      this.total = this.remaining;
+      document.getElementById('timer-label').textContent = isLongBreak ? '长休息' : '休息时间';
+      document.getElementById('timer-status-badge').textContent = isLongBreak ? '长休息' : '休息';
+      document.getElementById('timer-status-badge').classList.add('break');
+      document.getElementById('btn-start-pause').classList.add('break-mode');
+      document.getElementById('btn-start-pause').textContent = '开始休息';
+      this.updateDots();
+      if (typeof App !== 'undefined') App.showToast('🎉 专注完成！休息一下吧~');
+      const self = this;
+      setTimeout(() => { if (!self.isRunning && !self.isWork) self.start(); }, 1500);
+    } else {
+      this.isWork = true;
+      this.remaining = this.workDuration; this.total = this.remaining;
+      document.getElementById('timer-label').textContent = '专注时间';
+      document.getElementById('timer-status-badge').textContent = '就绪';
+      document.getElementById('timer-status-badge').classList.remove('break');
+      document.getElementById('btn-start-pause').classList.remove('break-mode');
+      document.getElementById('btn-start-pause').textContent = '开始专注';
+      if (typeof App !== 'undefined') App.showToast('⏰ 休息结束，开始新的专注！');
+    }
+    this.currentSessionStart = null;
+    this.render(); this.saveSettings();
+  },
+  playChime() {
+    try {
+      const ctx = AudioEngine.ctx; if (!ctx) return;
+      const now = ctx.currentTime;
+      const notes = this.isWork ? [523, 659, 784] : [784, 659, 523];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.15, now + i * 0.15);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.4);
+      });
+    } catch(e) {}
+  },
+  recordSession(durationMinutes) {
+    const today = this.getDateString();
+    const actualDuration = Math.max(1, durationMinutes || Math.round(this.workDuration / 60));
+    this.todayMinutes += actualDuration;
+    localStorage.setItem('dailyData', JSON.stringify({ date: today, minutes: this.todayMinutes }));
+    let sessions = [];
+    try { sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]'); } catch(e) {}
+    sessions.push({ date: today, duration: actualDuration, type: 'work', timestamp: Date.now() });
+    localStorage.setItem('focusSessions', JSON.stringify(sessions));
+    if (typeof Stats !== 'undefined') Stats.needsRefresh = true;
+    if (typeof App !== 'undefined') { App.checkAchievements(); App.updateStreakAndTotal(); }
+    this.updateTodayDisplay();
+  },
+  updateDots() {
+    const dots = document.querySelectorAll('#session-dots .dot');
+    const count = this.sessionCount % this.sessionsBeforeLongBreak;
+    dots.forEach((dot, i) => { if (i < count) dot.classList.add('filled'); else dot.classList.remove('filled'); });
+  },
+  updateTodayDisplay() {
+    document.getElementById('today-focus-time').textContent = '今日专注: ' + this.todayMinutes + ' 分钟';
+  },
+  updateClock() {
+    document.getElementById('current-clock').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  },
+  updateDate() {
+    const now = new Date();
+    const weekdays = ['日','一','二','三','四','五','六'];
+    document.getElementById('current-date').textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 星期' + weekdays[now.getDay()];
+    setTimeout(() => { setInterval(() => this.updateDate(), 60000); }, (60 - new Date().getSeconds()) * 1000);
+  },
+  render() {
+    const mins = Math.floor(this.remaining / 60);
+    const secs = this.remaining % 60;
+    document.getElementById('timer-minutes').textContent = String(mins).padStart(2, '0');
+    document.getElementById('timer-seconds').textContent = String(secs).padStart(2, '0');
+    const progress = this.remaining / this.total;
+    const circumference = 553;
+    const offset = circumference * (1 - progress);
+    const ring = document.querySelector('.ring-progress');
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = this.isWork ? 'var(--ring-progress)' : 'var(--break-color)';
+  },
+};
+</script>
+<script>
+/* ============================================
+   tasks.js - Task management + batch import
+   ============================================ */
+const TaskManager = {
+  tasks: [],
+  init() { this.loadTasks(); this.bindUI(); this.render(); },
+  loadTasks() { try { this.tasks = JSON.parse(localStorage.getItem('tasks') || '[]'); } catch(e) { this.tasks = []; } },
+  saveTasks() { localStorage.setItem('tasks', JSON.stringify(this.tasks)); },
+  bindUI() {
+    document.getElementById('task-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') this.addTask(); });
+    document.getElementById('btn-add-task').addEventListener('click', () => this.addTask());
+    document.getElementById('btn-clear-completed').addEventListener('click', () => this.clearCompleted());
+    // Batch import
+    document.getElementById('btn-batch-import').addEventListener('click', () => this.toggleBatchImport());
+    document.getElementById('btn-confirm-batch').addEventListener('click', () => this.confirmBatchImport());
+    document.getElementById('btn-cancel-batch').addEventListener('click', () => this.toggleBatchImport());
+  },
+  toggleBatchImport() {
+    const area = document.getElementById('batch-import-area');
+    const textarea = document.getElementById('batch-import-textarea');
+    if (area.classList.contains('active')) {
+      area.classList.remove('active');
+      textarea.value = '';
+    } else {
+      area.classList.add('active');
+      textarea.focus();
+    }
+  },
+  confirmBatchImport() {
+    const textarea = document.getElementById('batch-import-textarea');
+    const lines = textarea.value.split(/[\n\r]+/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return;
+    const now = Date.now();
+    lines.forEach((text, i) => {
+      this.tasks.unshift({
+        id: (now + i).toString(36) + Math.random().toString(36).substr(2, 5),
+        text: text.substring(0, 200),
+        completed: false,
+        createdAt: now + i,
+      });
+    });
+    this.saveTasks();
+    this.render();
+    textarea.value = '';
+    document.getElementById('batch-import-area').classList.remove('active');
+    if (typeof App !== 'undefined') App.showToast('📥 已导入 ' + lines.length + ' 个任务');
+  },
+  addTask() {
+    const input = document.getElementById('task-input');
+    const text = input.value.trim();
+    if (!text) return;
+    this.tasks.unshift({ id: Date.now().toString(36) + Math.random().toString(36).substr(2, 5), text: text, completed: false, createdAt: Date.now() });
+    input.value = '';
+    this.saveTasks(); this.render(); input.focus();
+  },
+  toggleTask(id) {
+    const task = this.tasks.find(t => t.id === id);
+    if (task) {
+      task.completed = !task.completed;
+      if (task.completed) task.completedAt = Date.now(); else delete task.completedAt;
+      this.saveTasks(); this.render();
+      if (task.completed && typeof App !== 'undefined') App.checkAchievements();
+    }
+  },
+  deleteTask(id) { this.tasks = this.tasks.filter(t => t.id !== id); this.saveTasks(); this.render(); },
+  clearCompleted() {
+    if (!this.tasks.some(t => t.completed)) return;
+    this.tasks = this.tasks.filter(t => !t.completed);
+    this.saveTasks(); this.render();
+  },
+  getActiveCount() { return this.tasks.filter(t => !t.completed).length; },
+  getCompletedCount() { return this.tasks.filter(t => t.completed).length; },
+  render() {
+    const list = document.getElementById('task-list');
+    const emptyEl = list.querySelector('.task-empty');
+    const sorted = [...this.tasks].sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return b.createdAt - a.createdAt;
+    });
+    list.querySelectorAll('.task-item').forEach(el => el.remove());
+    if (sorted.length === 0) {
+      if (!emptyEl) { const el = document.createElement('li'); el.className = 'task-empty'; el.textContent = '✨ 暂无任务，添加一个吧'; list.appendChild(el); }
+      if (emptyEl) emptyEl.style.display = '';
+    } else {
+      if (emptyEl) emptyEl.style.display = 'none';
+      sorted.forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item' + (task.completed ? ' completed' : '');
+        const cb = document.createElement('button');
+        cb.className = 'task-checkbox'; cb.textContent = task.completed ? '✓' : '';
+        cb.addEventListener('click', () => this.toggleTask(task.id));
+        const txt = document.createElement('span');
+        txt.className = 'task-text'; txt.textContent = task.text;
+        const del = document.createElement('button');
+        del.className = 'task-delete'; del.textContent = '×';
+        del.addEventListener('click', () => this.deleteTask(task.id));
+        li.appendChild(cb); li.appendChild(txt); li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+    document.getElementById('task-count').textContent = this.getActiveCount();
+    const clearBtn = document.getElementById('btn-clear-completed');
+    if (this.getCompletedCount() > 0) clearBtn.classList.remove('hidden'); else clearBtn.classList.add('hidden');
+  },
+};
+</script>
+<script>
+/* ============================================
+   stats.js - Statistics & Charts
+   ============================================ */
+const Stats = {
+  weeklyChart: null, monthlyChart: null, needsRefresh: true,
+  getTextColor() {
+    const style = getComputedStyle(document.documentElement);
+    return style.getPropertyValue('--text-muted').trim() || '#8a8aaa';
+  },
+  init() {
+    document.getElementById('btn-stats').addEventListener('click', () => this.openModal());
+    document.getElementById('stats-modal').querySelector('.modal-close').addEventListener('click', () => this.closeModal());
+    document.getElementById('stats-modal').querySelector('.modal-backdrop').addEventListener('click', () => this.closeModal());
+    document.getElementById('btn-export-data').addEventListener('click', () => this.exportData());
+  },
+  openModal() { this.refresh(); document.getElementById('stats-modal').classList.add('active'); document.body.style.overflow = 'hidden'; },
+  closeModal() { document.getElementById('stats-modal').classList.remove('active'); document.body.style.overflow = ''; },
+  getSessions() { try { return JSON.parse(localStorage.getItem('focusSessions') || '[]'); } catch(e) { return []; } },
+  refresh() {
+    this.needsRefresh = false;
+    const sessions = this.getSessions();
+    this.updateSummaryCards(sessions);
+    this.renderWeeklyChart(sessions);
+    this.renderMonthlyChart(sessions);
+    this.renderHeatmap(sessions);
+  },
+  updateSummaryCards(sessions) {
+    const today = this.getDateString();
+    const weekStart = this.getWeekStart();
+    const monthKey = today.substring(0, 7);
+    const todayMins = sessions.filter(s => s.date === today).reduce((sum, s) => sum + s.duration, 0);
+    const weekMins = sessions.filter(s => s.date >= weekStart && s.date <= today).reduce((sum, s) => sum + s.duration, 0);
+    const monthMins = sessions.filter(s => s.date.startsWith(monthKey)).reduce((sum, s) => sum + s.duration, 0);
+    const totalMins = sessions.reduce((sum, s) => sum + s.duration, 0);
+    document.getElementById('stat-today-minutes').textContent = todayMins;
+    document.getElementById('stat-weekly-hours').textContent = (weekMins / 60).toFixed(1);
+    document.getElementById('stat-monthly-hours').textContent = (monthMins / 60).toFixed(1);
+    document.getElementById('stat-total-hours-all').textContent = (totalMins / 60).toFixed(1);
+  },
+  renderWeeklyChart(sessions) {
+    if (this.weeklyChart) this.weeklyChart.destroy();
+    const days = [], labels = [];
+    const weekStart = new Date(this.getWeekStart() + 'T00:00:00');
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart); d.setDate(d.getDate() + i);
+      const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      const weekdays = ['日','一','二','三','四','五','六'];
+      labels.push('周' + weekdays[d.getDay()]);
+      days.push(Math.round(sessions.filter(s => s.date === key).reduce((sum, s) => sum + s.duration, 0) / 60 * 10) / 10);
+    }
+    const ctx = document.getElementById('chart-weekly').getContext('2d');
+    this.weeklyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '专注时长 (小时)', data: days,
+          backgroundColor: days.map((v, i) => i === new Date().getDay() ? 'rgba(232,131,94,0.8)' : 'rgba(232,131,94,0.3)'),
+          borderColor: 'rgba(232,131,94,1)', borderWidth: 1, borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => v + 'h', color: this.getTextColor(), font: { size: 10 } }, grid: { color: 'rgba(128,128,128,0.1)' } },
+          x: { ticks: { color: this.getTextColor(), font: { size: 10 } }, grid: { display: false } },
+        },
+      },
+    });
+  },
+  renderMonthlyChart(sessions) {
+    if (this.monthlyChart) this.monthlyChart.destroy();
+    const now = new Date(), year = now.getFullYear(), month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const labels = [], data = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      labels.push(d + '日');
+      data.push(Math.round(sessions.filter(s => s.date === key).reduce((sum, s) => sum + s.duration, 0) / 60 * 10) / 10);
+    }
+    const ctx = document.getElementById('chart-monthly').getContext('2d');
+    this.monthlyChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '专注时长 (小时)', data: data,
+          borderColor: 'rgba(94,163,232,0.9)', backgroundColor: 'rgba(94,163,232,0.1)',
+          fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5,
+          pointBackgroundColor: 'rgba(94,163,232,1)', borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: v => v + 'h', color: this.getTextColor(), font: { size: 10 } }, grid: { color: 'rgba(128,128,128,0.1)' } },
+          x: { ticks: { color: this.getTextColor(), font: { size: 9 }, maxTicksLimit: 15 }, grid: { display: false } },
+        },
+      },
+    });
+  },
+  renderHeatmap(sessions) {
+    const grid = document.getElementById('heatmap-grid'); grid.innerHTML = '';
+    const now = new Date(), year = now.getFullYear(), month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayOfWeek = new Date(year, month, 1).getDay();
+    ['日','一','二','三','四','五','六'].forEach(d => {
+      const el = document.createElement('div'); el.className = 'heatmap-day-header'; el.textContent = d; grid.appendChild(el);
+    });
+    for (let i = 0; i < firstDayOfWeek; i++) { const el = document.createElement('div'); grid.appendChild(el); }
+    const lookup = {};
+    sessions.forEach(s => {
+      if (s.date.startsWith(year + '-' + String(month+1).padStart(2,'0'))) lookup[s.date] = (lookup[s.date] || 0) + s.duration;
+    });
+    const today = new Date().getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+      const mins = lookup[key] || 0;
+      let level = 0;
+      if (mins > 0) level = 1; if (mins >= 30) level = 2; if (mins >= 90) level = 3; if (mins >= 180) level = 4;
+      const el = document.createElement('div');
+      el.className = 'heatmap-cell level-' + level;
+      el.title = key + ': ' + mins + ' 分钟';
+      if (d === today) el.style.border = '2px solid var(--accent)';
+      grid.appendChild(el);
+    }
+    const totalCells = firstDayOfWeek + daysInMonth;
+    const remainder = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < remainder; i++) { const el = document.createElement('div'); grid.appendChild(el); }
+  },
+  exportData() {
+    const data = {
+      focusSessions: this.getSessions(),
+      tasks: JSON.parse(localStorage.getItem('tasks') || '[]'),
+      calendarGoals: JSON.parse(localStorage.getItem('calendarGoals') || '{}'),
+      settings: JSON.parse(localStorage.getItem('timerSettings') || '{}'),
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'focus-data-' + this.getDateString() + '.json'; a.click();
+    URL.revokeObjectURL(url);
+    if (typeof App !== 'undefined') App.showToast('📥 数据已导出');
+  },
+  getDateString() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  },
+  getWeekStart() {
+    const d = new Date(); d.setDate(d.getDate() - d.getDay());
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  },
+};
+</script>
+<script>
+/* ============================================
+   calendar.js - Monthly goal calendar
+   ============================================ */
+const CalendarGoals = {
+  currentYear: 0, currentMonth: 0, selectedDate: null, goals: {},
+
+  init() {
+    const now = new Date();
+    this.currentYear = now.getFullYear();
+    this.currentMonth = now.getMonth();
+    this.loadGoals();
+    this.bindUI();
+    this.render();
+  },
+  loadGoals() {
+    try { this.goals = JSON.parse(localStorage.getItem('calendarGoals') || '{}'); } catch(e) { this.goals = {}; }
+  },
+  saveGoals() { localStorage.setItem('calendarGoals', JSON.stringify(this.goals)); },
+  bindUI() {
+    document.getElementById('cal-prev-month').addEventListener('click', () => { this.changeMonth(-1); });
+    document.getElementById('cal-next-month').addEventListener('click', () => { this.changeMonth(1); });
+    document.getElementById('btn-goal-save').addEventListener('click', () => { this.saveGoal(); });
+    document.getElementById('btn-goal-delete').addEventListener('click', () => { this.deleteGoal(); });
+  },
+  changeMonth(delta) {
+    this.currentMonth += delta;
+    if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
+    if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+    this.selectedDate = null;
+    this.render();
+  },
+  formatDateKey(year, month, day) {
+    return year + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  },
+  selectDate(dateKey) {
+    this.selectedDate = dateKey;
+    this.render();
+    // Show goal editor
+    const editor = document.getElementById('goal-mini-editor');
+    const dateLabel = document.getElementById('goal-date-label');
+    const goalInput = document.getElementById('goal-text-input');
+    const deleteBtn = document.getElementById('btn-goal-delete');
+    editor.classList.add('active');
+    dateLabel.textContent = '📌 ' + dateKey;
+    goalInput.value = this.goals[dateKey] || '';
+    if (this.goals[dateKey]) { deleteBtn.style.display = ''; } else { deleteBtn.style.display = 'none'; }
+    goalInput.focus();
+  },
+  saveGoal() {
+    if (!this.selectedDate) return;
+    const text = document.getElementById('goal-text-input').value.trim();
+    if (text) {
+      this.goals[this.selectedDate] = text;
+    } else {
+      delete this.goals[this.selectedDate];
+    }
+    this.saveGoals();
+    document.getElementById('goal-mini-editor').classList.remove('active');
+    this.render();
+    if (text) App.showToast('📅 目标已保存: ' + this.selectedDate);
+  },
+  deleteGoal() {
+    if (!this.selectedDate) return;
+    delete this.goals[this.selectedDate];
+    this.saveGoals();
+    document.getElementById('goal-mini-editor').classList.remove('active');
+    this.selectedDate = null;
+    this.render();
+    App.showToast('🗑️ 目标已删除');
+  },
+  render() {
+    // Month label
+    document.getElementById('cal-month-label').textContent = this.currentYear + '年 ' + (this.currentMonth+1) + '月';
+
+    // Day headers (already in HTML as static, let's populate them dynamically too)
+    const headersGrid = document.getElementById('cal-day-headers');
+    if (!headersGrid.hasChildNodes()) {
+      ['日','一','二','三','四','五','六'].forEach(d => {
+        const el = document.createElement('div'); el.className = 'calendar-day-header'; el.textContent = d; headersGrid.appendChild(el);
+      });
+    }
+
+    // Days grid
+    const grid = document.getElementById('cal-days-grid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(this.currentYear, this.currentMonth, 1).getDay();
+    const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(this.currentYear, this.currentMonth, 0).getDate();
+    const today = new Date();
+    const todayKey = this.formatDateKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = daysInPrevMonth - i;
+      const pm = this.currentMonth === 0 ? 11 : this.currentMonth - 1;
+      const py = this.currentMonth === 0 ? this.currentYear - 1 : this.currentYear;
+      const dateKey = this.formatDateKey(py, pm, day);
+      const el = this.createDayEl(day, dateKey, 'other-month');
+      grid.appendChild(el);
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = this.formatDateKey(this.currentYear, this.currentMonth, d);
+      let cls = '';
+      if (dateKey === todayKey) cls += ' today';
+      if (dateKey === this.selectedDate) cls += ' selected';
+      if (this.goals[dateKey]) cls += ' has-goal';
+      const el = this.createDayEl(d, dateKey, cls);
+      grid.appendChild(el);
+    }
+
+    // Remaining cells
+    const totalCells = firstDay + daysInMonth;
+    const remaining = (7 - (totalCells % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      const nm = this.currentMonth === 11 ? 0 : this.currentMonth + 1;
+      const ny = this.currentMonth === 11 ? this.currentYear + 1 : this.currentYear;
+      const dateKey = this.formatDateKey(ny, nm, d);
+      const el = this.createDayEl(d, dateKey, 'other-month');
+      grid.appendChild(el);
+    }
+
+    // Update goal list for the current view
+    this.renderGoalList();
+  },
+  createDayEl(day, dateKey, cls) {
+    const el = document.createElement('div');
+    el.className = 'calendar-day' + (cls ? ' ' + cls : '');
+    el.textContent = day;
+    if (!cls.includes('other-month')) {
+      el.addEventListener('click', () => this.selectDate(dateKey));
+    }
+    if (this.goals[dateKey]) {
+      el.title = dateKey + ': ' + this.goals[dateKey];
+    }
+    return el;
+  },
+  renderGoalList() {
+    const list = document.getElementById('cal-goal-list');
+    const prefix = this.formatDateKey(this.currentYear, this.currentMonth, 1).substring(0, 7);
+    const entries = Object.entries(this.goals)
+      .filter(([k]) => k.startsWith(prefix))
+      .sort(([a], [b]) => a.localeCompare(b));
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:8px">点击日期添加目标</div>';
+    } else {
+      list.innerHTML = entries.map(([k, v]) => {
+        const day = k.split('-')[2];
+        return '<div style="padding:3px 0;display:flex;gap:6px;align-items:flex-start"><span style="color:var(--accent);flex-shrink:0;font-weight:600">' + day + '日</span><span>' + this.escapeHtml(v) + '</span></div>';
+      }).join('');
+    }
+  },
+  escapeHtml(str) {
+    const div = document.createElement('div'); div.textContent = str; return div.innerHTML;
+  },
+};
+</script>
+<script>
+/* ============================================
+   app.js - Main Application Controller
+   ============================================ */
+const App = {
+  theme: 'light', achievements: [],
+  achievementDefs: [
+    { id: 'first_session', name: '初次专注', desc: '完成第1次番茄钟', icon: '\u{1F345}', check: s => s.totalSessions >= 1 },
+    { id: 'ten_sessions', name: '专注新手', desc: '完成10次番茄钟', icon: '⭐', check: s => s.totalSessions >= 10 },
+    { id: 'fifty_sessions', name: '专注达人', desc: '完成50次番茄钟', icon: '\u{1F31F}', check: s => s.totalSessions >= 50 },
+    { id: 'hundred_sessions', name: '番茄大师', desc: '完成100次番茄钟', icon: '\u{1F451}', check: s => s.totalSessions >= 100 },
+    { id: 'one_hour_today', name: '一小时挑战', desc: '单日专注超1小时', icon: '⏱️', check: s => s.maxDaily >= 60 },
+    { id: 'three_hour_today', name: '深度专注', desc: '单日专注超3小时', icon: '\u{1F525}', check: s => s.maxDaily >= 180 },
+    { id: 'six_hour_today', name: '学霸附体', desc: '单日专注超6小时', icon: '\u{1F4DA}', check: s => s.maxDaily >= 360 },
+    { id: 'streak_3', name: '三日坚持', desc: '连续3天专注', icon: '\u{1F4C5}', check: s => s.currentStreak >= 3 },
+    { id: 'streak_7', name: '一周习惯', desc: '连续7天专注', icon: '\u{1F5D3}️', check: s => s.currentStreak >= 7 },
+    { id: 'streak_30', name: '月度自律', desc: '连续30天专注', icon: '\u{1F3C5}', check: s => s.currentStreak >= 30 },
+    { id: 'early_bird', name: '早起鸟儿', desc: '早上8点前完成专注', icon: '\u{1F305}', check: s => s.earlyBird },
+    { id: 'night_owl', name: '夜猫子', desc: '晚上10点后完成专注', icon: '\u{1F989}', check: s => s.nightOwl },
+    { id: 'task_master', name: '任务达人', desc: '完成10个任务', icon: '✅', check: s => s.completedTasks >= 10 },
+    { id: 'task_centurion', name: '任务收割机', desc: '完成100个任务', icon: '\u{1F3C6}', check: s => s.completedTasks >= 100 },
+    { id: 'total_10h', name: '积累者', desc: '累计专注10小时', icon: '⏳', check: s => s.totalHours >= 10 },
+    { id: 'total_100h', name: '修行者', desc: '累计专注100小时', icon: '\u{1F9D8}', check: s => s.totalHours >= 100 },
+    { id: 'total_500h', name: '苦行僧', desc: '累计专注500小时', icon: '\u{1F3D4}️', check: s => s.totalHours >= 500 },
+  ],
+
+  init() {
+    this.loadState(); this.bindUI(); this.applyTheme();
+    Background.init();
+    AudioEngine.init();
+    PomodoroTimer.init();
+    TaskManager.init();
+    Stats.init();
+    CalendarGoals.init();
+    this.updateStreakAndTotal();
+    this.checkAchievements();
+    this.handleAudioPrompt();
+  },
+
+  bindUI() {
+    document.getElementById('btn-theme').addEventListener('click', () => this.toggleTheme());
+    document.getElementById('btn-fullscreen').addEventListener('click', () => this.toggleFullscreen());
+    document.getElementById('btn-achievements').addEventListener('click', () => this.openAchievements());
+    const achModal = document.getElementById('achievements-modal');
+    achModal.querySelector('.modal-close').addEventListener('click', () => this.closeAchievements());
+    achModal.querySelector('.modal-backdrop').addEventListener('click', () => this.closeAchievements());
+
+    // Tab switching in info panel
+    document.querySelectorAll('.panel-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.code === 'Space') { e.preventDefault(); PomodoroTimer.toggle(); }
+      if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) { PomodoroTimer.reset(); }
+    });
+  },
+
+  loadState() {
+    try {
+      const s = JSON.parse(localStorage.getItem('appSettings'));
+      if (s) { this.theme = s.theme || 'light'; this.achievements = s.achievements || []; }
+    } catch(e) {}
+  },
+  saveState() { localStorage.setItem('appSettings', JSON.stringify({ theme: this.theme, achievements: this.achievements })); },
+
+  toggleTheme() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', this.theme);
+    document.getElementById('btn-theme').textContent = this.theme === 'dark' ? '☀️' : '\u{1F313}';
+    if (document.getElementById('stats-modal').classList.contains('active')) setTimeout(() => Stats.refresh(), 300);
+    this.saveState();
+  },
+  applyTheme() {
+    document.body.setAttribute('data-theme', this.theme);
+    document.getElementById('btn-theme').textContent = this.theme === 'dark' ? '☀️' : '\u{1F313}';
+  },
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
+  },
+
+  handleAudioPrompt() {
+    const prompt = document.getElementById('audio-prompt');
+    prompt.classList.remove('hidden');
+    const dismiss = () => { prompt.classList.add('hidden'); };
+    prompt.addEventListener('click', dismiss);
+    setTimeout(dismiss, 3000);
+  },
+
+  getStats() {
+    const sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]');
+    const totalSessions = sessions.length;
+    const totalMinutes = sessions.reduce((s, r) => s + r.duration, 0);
+    const totalHours = totalMinutes / 60;
+    const dailyMap = {};
+    sessions.forEach(s => { dailyMap[s.date] = (dailyMap[s.date] || 0) + s.duration; });
+    const maxDaily = Object.values(dailyMap).reduce((max, v) => Math.max(max, v), 0);
+    let currentStreak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      if (dailyMap[key]) currentStreak++; else if (i > 0) break;
+    }
+    const timestamps = sessions.map(s => s.timestamp).filter(Boolean);
+    const earlyBird = timestamps.some(t => new Date(t).getHours() < 8);
+    const nightOwl = timestamps.some(t => new Date(t).getHours() >= 22);
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const completedTasks = tasks.filter(t => t.completed).length;
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks };
+  },
+
+  checkAchievements() {
+    const stats = this.getStats();
+    let newUnlocks = false;
+    this.achievementDefs.forEach(def => {
+      if (this.achievements.includes(def.id)) return;
+      if (def.check(stats)) { this.achievements.push(def.id); this.showToast('\u{1F3C6} 解锁成就: ' + def.icon + ' ' + def.name); newUnlocks = true; }
+    });
+    if (newUnlocks) { this.saveState(); this.updateStreakAndTotal(); }
+  },
+
+  openAchievements() {
+    this.renderAchievements();
+    document.getElementById('achievements-modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  },
+  closeAchievements() {
+    document.getElementById('achievements-modal').classList.remove('active');
+    document.body.style.overflow = '';
+  },
+  renderAchievements() {
+    const grid = document.getElementById('achievements-grid');
+    grid.innerHTML = this.achievementDefs.map(def => {
+      const unlocked = this.achievements.includes(def.id);
+      return '<div class="achievement-card ' + (unlocked ? 'unlocked' : 'locked') + '">' +
+        '<div class="achievement-icon">' + def.icon + '</div>' +
+        '<div class="achievement-name">' + def.name + '</div>' +
+        '<div class="achievement-desc">' + def.desc + '</div>' +
+        (unlocked ? '<div class="achievement-date">已解锁</div>' : '') +
+      '</div>';
+    }).join('');
+  },
+
+  updateStreakAndTotal() {
+    const stats = this.getStats();
+    document.getElementById('streak-days').textContent = stats.currentStreak + ' 天';
+    document.getElementById('total-hours').textContent = stats.totalHours.toFixed(1) + ' 小时';
+  },
+
+  showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast'; toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+  },
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
