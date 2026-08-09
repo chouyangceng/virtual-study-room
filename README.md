@@ -64,6 +64,10 @@ node tools/build-single-file.mjs
 - Unsplash — 背景图片（仅加载图片，不上传学习数据）
 - localStorage — 数据持久化
 
+## 在线访问
+
+https://chouyangceng.github.io/virtual-study-room/
+
 ## 数据与隐私
 
 所有学习记录、任务和偏好只保存在浏览器本地，不会发送到项目服务器。清除浏览器站点数据会同时清除这些记录；建议定期在“专注统计”中导出 JSON 备份。
