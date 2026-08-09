@@ -53,6 +53,21 @@ const App = {
     // Update streak/total display
     this.updateStreakAndTotal();
     this.checkAchievements();
+    this.remindBackup();
+  },
+
+  remindBackup() {
+    try {
+      const key = 'lastBackupReminder';
+      const last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last > 30 * 24 * 60 * 60 * 1000) {
+        localStorage.setItem(key, String(Date.now()));
+        setTimeout(() => {
+          if (typeof Stats !== 'undefined') Stats.exportData();
+          this.showToast('📤 建议定期导出备份：数据仅存本机，清理浏览器数据会丢失');
+        }, 4000);
+      }
+    } catch (e) { /* ignore */ }
   },
 
   bindUI() {

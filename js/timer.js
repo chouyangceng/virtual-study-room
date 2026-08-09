@@ -338,6 +338,11 @@ const PomodoroTimer = {
     // Save session record
     let sessions = [];
     try { sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]'); } catch(e) {}
+    if (!Array.isArray(sessions)) sessions = [];
+    if (sessions.length >= 5000) {
+      sessions = sessions.slice(-4000);
+      if (typeof App !== 'undefined') App.showToast('⚠️ 专注记录已达上限，最早的记录已自动清理。请定期导出备份。');
+    }
     const subjectId = this.currentSessionSubjectId || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
     sessions.push({
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,

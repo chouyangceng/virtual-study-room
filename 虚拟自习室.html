@@ -3386,6 +3386,11 @@ const PomodoroTimer = {
     // Save session record
     let sessions = [];
     try { sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]'); } catch(e) {}
+    if (!Array.isArray(sessions)) sessions = [];
+    if (sessions.length >= 5000) {
+      sessions = sessions.slice(-4000);
+      if (typeof App !== 'undefined') App.showToast('⚠️ 专注记录已达上限，最早的记录已自动清理。请定期导出备份。');
+    }
     const subjectId = this.currentSessionSubjectId || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
     sessions.push({
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -6207,6 +6212,21 @@ const App = {
     // Update streak/total display
     this.updateStreakAndTotal();
     this.checkAchievements();
+    this.remindBackup();
+  },
+
+  remindBackup() {
+    try {
+      const key = 'lastBackupReminder';
+      const last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last > 30 * 24 * 60 * 60 * 1000) {
+        localStorage.setItem(key, String(Date.now()));
+        setTimeout(() => {
+          if (typeof Stats !== 'undefined') Stats.exportData();
+          this.showToast('📤 建议定期导出备份：数据仅存本机，清理浏览器数据会丢失');
+        }, 4000);
+      }
+    } catch (e) { /* ignore */ }
   },
 
   bindUI() {
