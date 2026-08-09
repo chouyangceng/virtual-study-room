@@ -11,6 +11,7 @@ const SubjectManager = {
     { name: '英语', color: '#6c9cf5' },
     { name: '数学', color: '#55b89b' },
     { name: '专业课', color: '#a884e8' },
+    { name: '822控制', color: '#e8835e' },
   ],
 
   init() {
@@ -28,6 +29,9 @@ const SubjectManager = {
     try { this.subjects = JSON.parse(localStorage.getItem('subjects') || '[]'); } catch (e) { this.subjects = []; }
     if (!Array.isArray(this.subjects) || !this.subjects.length) {
       this.subjects = this.defaults.map((item, index) => ({ id: `subject-${index + 1}`, ...item, target: '', dailyTasks: 0, dailyMinutes: 0, timeRange: '' }));
+      this.save();
+    } else if (!this.subjects.some(item => item.name === '822控制')) {
+      this.subjects.push({ id: `subject-${Date.now().toString(36)}`, ...this.defaults[4], target: '', dailyTasks: 0, dailyMinutes: 0, timeRange: '' });
       this.save();
     }
     this.currentSubjectId = localStorage.getItem('currentSubjectId') || '';
