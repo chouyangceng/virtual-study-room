@@ -177,9 +177,9 @@ const Stats = {
           data: days,
           backgroundColor: days.map((v, i) => {
             const today = new Date().getDay();
-            return i === today ? 'rgba(232, 131, 94, 0.8)' : 'rgba(232, 131, 94, 0.3)';
+            return i === today ? 'rgba(201, 160, 135, 0.8)' : 'rgba(201, 160, 135, 0.3)';
           }),
-          borderColor: 'rgba(232, 131, 94, 1)',
+          borderColor: 'rgba(201, 160, 135, 1)',
           borderWidth: 1,
           borderRadius: 6,
         }],

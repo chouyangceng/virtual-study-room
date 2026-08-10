@@ -7,11 +7,11 @@ const SubjectManager = {
   currentSubjectId: '',
   editingId: '',
   defaults: [
-    { name: '政治', color: '#e7835e' },
+    { name: '政治', color: '#d4a894' },
     { name: '英语', color: '#6c9cf5' },
     { name: '数学', color: '#55b89b' },
     { name: '专业课', color: '#a884e8' },
-    { name: '822控制', color: '#e8835e' },
+    { name: '822控制', color: '#c9a087' },
   ],
 
   init() {

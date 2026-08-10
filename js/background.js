@@ -6,11 +6,11 @@
 const Background = {
   currentIndex: 0,
   fallbackGradients: [
-    'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-    'linear-gradient(135deg, #2d1b69 0%, #1b3a4b 50%, #1a5e3f 100%)',
-    'linear-gradient(135deg, #3a1c71 0%, #4a2c6e 50%, #1e3c5c 100%)',
-    'linear-gradient(135deg, #0c1b33 0%, #1a3a5c 50%, #2d5a3f 100%)',
-    'linear-gradient(135deg, #1a1a3e 0%, #2d1b4e 50%, #3a2a5e 100%)',
+    'linear-gradient(135deg, #2d2d3f 0%, #3f3a52 50%, #5a4a3f 100%)',
+    'linear-gradient(135deg, #403552 0%, #3f4a52 50%, #3f5248 100%)',
+    'linear-gradient(135deg, #4a3f5c 0%, #564a5c 50%, #4a4a58 100%)',
+    'linear-gradient(135deg, #2a3a4a 0%, #3a4a5a 50%, #3a4a3f 100%)',
+    'linear-gradient(135deg, #3a3a50 0%, #453f56 50%, #50455c 100%)',
   ],
 
   // Curated Unsplash landscapes: mountains, forests, lakes, ocean and desert.

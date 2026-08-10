@@ -1,3 +1,5 @@
 .DS_Store
 Thumbs.db
 outputs/*.zip
+release/
+build/icon.png
