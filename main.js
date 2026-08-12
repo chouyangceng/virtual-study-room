@@ -5,10 +5,22 @@ const path = require('path');
 
 let archiveService = null;
 
+function configuredDataRoot() {
+  const argument = process.argv.find(value => String(value).startsWith('--vsr-data-root='));
+  const value = String(argument ? argument.slice('--vsr-data-root='.length) : process.env.VSR_DATA_ROOT || '').trim();
+  return value ? path.resolve(value) : null;
+}
+
+const dataRoot = process.platform === 'win32' ? configuredDataRoot() : null;
+if (dataRoot) app.setPath('userData', path.join(dataRoot, '应用数据'));
+
 async function startArchiveServiceIfNeeded() {
   if (process.platform !== 'win32') return null;
   const { startWindowsArchive } = require('./server/windows-archive');
-  archiveService = await startWindowsArchive({ staticRoot: __dirname });
+  archiveService = await startWindowsArchive({
+    staticRoot: __dirname,
+    dataDirectory: dataRoot ? path.join(dataRoot, 'Windows归档') : undefined
+  });
   return archiveService;
 }
 

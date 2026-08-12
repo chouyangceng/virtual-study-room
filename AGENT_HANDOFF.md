@@ -125,6 +125,11 @@
 
 ## 更新记录
 
+### 2026-08-12 - Windows 程序与数据迁移到 E 盘
+
+- `main.js` 支持用户环境变量 `VSR_DATA_ROOT` 及优先级更高的 `--vsr-data-root=...` 启动参数；Windows Electron 在启动早期将 `userData` 指向其 `应用数据` 子目录，并将权威归档指向 `Windows归档` 子目录。
+- 本机目标为 `E:\虚拟自习室\程序` 与 `E:\虚拟自习室\学习数据`，迁移时先复制核验再清理 C 盘旧副本。
+
 ### 2026-08-12 - Windows / macOS 实机构建安装与跨机同步
 
 - Windows x64 便携版构建并限时启动成功；产物位于 `outputs/installers/虚拟自习室 1.1.0.exe`。
