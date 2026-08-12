@@ -1,5 +1,10 @@
 .DS_Store
 Thumbs.db
 outputs/*.zip
+outputs/installers/
 release/
 build/icon.png
+node_modules/
+*.log
+service-config.json
+archives/

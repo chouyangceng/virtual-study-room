@@ -41,7 +41,7 @@
         <button id="btn-achievements" class="topbar-btn" title="成就">🏆</button>
         <button id="btn-goals" class="topbar-btn" title="多目标倒计时">🎯</button>
         <button id="btn-panorama" class="topbar-btn" title="全景专注模式" aria-label="进入全景专注模式">◉</button>
-        <button id="btn-refresh-app" class="topbar-btn" title="刷新页面">↻</button>
+        <button id="btn-refresh-app" class="topbar-btn" title="继续计时" aria-label="继续计时">↻</button>
         <button id="btn-theme" class="topbar-btn" title="切换主题">🌓</button>
         <button id="btn-fullscreen" class="topbar-btn" title="全屏">⛶</button>
       </div>
@@ -64,8 +64,29 @@
   <div id="sync-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content glass-panel sync-content">
-      <div class="modal-header"><div><h2>🔄 设备同步</h2><p class="modal-subtitle">安卓和 Windows 之间转移同一份学习数据</p></div><button class="modal-close" aria-label="关闭">&times;</button></div>
-      <div class="modal-body sync-body"><p>在安卓端导出 JSON，把文件传到 Windows 后再导入；导入会覆盖当前浏览器中的本地数据。</p><button id="btn-sync-export" class="secondary-btn" type="button">导出安卓数据</button><input id="sync-file-input" type="file" accept=".json,application/json" hidden><button id="btn-sync-import" class="primary-btn" type="button">导入到本机</button><p id="sync-status" class="import-hub-status"></p></div>
+      <div class="modal-header"><div><h2>🔄 Windows 权威归档</h2><p class="modal-subtitle">手机、平板与 Mac 单向上传；Windows 持久化后才允许清理本机旧历史</p></div><button class="modal-close" aria-label="关闭">&times;</button></div>
+      <div class="modal-body sync-body">
+        <div class="sync-status-row"><span id="sync-state-badge" class="sync-state-badge" data-state="idle">未同步</span><p id="sync-status" class="import-hub-status" aria-live="polite"></p></div>
+        <div id="sync-file-warning" class="sync-warning" hidden>单文件 / <code>file://</code> 环境受浏览器限制，不启用自动网络同步；下方手工 JSON 导入导出仍可用。</div>
+        <section id="sync-local-config" class="sync-local-config" hidden></section>
+        <section id="sync-network-panel" class="sync-section">
+          <h3>自动归档设置</h3>
+          <div class="sync-form-grid">
+            <label class="sync-wide">Windows 服务地址<input id="sync-service-url" type="url" inputmode="url" placeholder="http://192.168.1.20:43110"></label>
+            <label class="sync-wide">同步 token<span class="sync-secret-input"><input id="sync-token" type="password" autocomplete="off" spellcheck="false"><button id="sync-token-toggle" class="text-btn" type="button">显示</button></span></label>
+            <label>设备名称<input id="sync-device-name" type="text" maxlength="80"></label>
+            <label>稳定 deviceId<input id="sync-device-id" type="text" readonly></label>
+            <label>同步间隔（分钟）<input id="sync-interval" type="number" min="5" max="1440" value="15"></label>
+            <label>本地保留天数<input id="sync-retention" type="number" min="1" max="3650" value="30"></label>
+          </div>
+          <div class="sync-toggles"><label><input id="sync-auto" type="checkbox" checked> 自动同步（打开、联网、回前台、定时）</label><label><input id="sync-auto-cleanup" type="checkbox"> 每日最多一次自动清理已确认归档的旧历史</label></div>
+          <p class="sync-note">失败不会阻塞计时与本地保存。iOS/浏览器完全关闭后无法后台运行，需重新打开或回到前台才会同步。</p>
+          <div class="sync-actions"><button id="btn-sync-save" class="secondary-btn" type="button">保存设置</button><button id="btn-sync-test" class="secondary-btn" type="button">测试连接</button><button id="btn-sync-upload" class="primary-btn" type="button">立即上传</button></div>
+          <div class="sync-archive-heading"><h3>Windows 归档</h3><button id="btn-sync-list" class="text-btn" type="button">刷新列表</button></div>
+          <div id="sync-archive-list" class="sync-archive-list"><p class="sync-empty">点击“刷新列表”查看可下载、可恢复归档。</p></div>
+        </section>
+        <section class="sync-section sync-manual"><h3>手工 JSON（向后兼容）</h3><p>手工导入会覆盖本机学习数据，请先导出备份。同步 token 与 API Key 不会出现在导出文件中。</p><div class="sync-actions"><button id="btn-sync-export" class="secondary-btn" type="button">导出本机数据</button><input id="sync-file-input" type="file" accept=".json,application/json" hidden><button id="btn-sync-import" class="secondary-btn" type="button">导入到本机</button></div></section>
+      </div>
     </div>
   </div>
 
@@ -562,6 +583,7 @@
   <script src="js/tasks.js?v=20260809"></script>
   <script src="js/plans.js"></script>
   <script src="js/import-hub.js"></script>
+  <script src="shared/archive-core.js"></script>
   <script src="js/sync.js"></script>
   <script>if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});</script>
   <script src="js/reviews.js"></script>

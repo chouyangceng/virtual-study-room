@@ -30,6 +30,10 @@
 - 🏆 **成就系统** — 17枚徽章（专注次数、连续天数、时长积累、早起鸟/夜猫子）
 - 🌓 **深色/浅色主题** — CSS变量驱动，一键切换
 - ⌨️ **快捷键** — 空格=开始/暂停，R=重置
+- 📱 **手机 / 平板 PWA** — 375px 起响应式布局、触控按钮、横竖屏和离线应用壳
+- 🍎 **macOS 桌面端** — Electron x64 / Apple Silicon 构建入口，作为离线优先同步客户端
+- 🗄️ **Windows 权威归档** — 局域网自动上传、Bearer token、不可变快照、SHA-256 持久化回执和归档恢复
+- 🧹 **确认后安全清理** — Windows 落盘确认后，客户端每日最多一次清理超出保留期且内容未变化的旧历史
 
 ## 使用方式
 
@@ -43,6 +47,43 @@ python3 -m http.server 8080
 ```
 
 使用本地服务器时，Service Worker 会缓存页面资源，可离线使用并可安装为 PWA（添加到桌面/主屏幕，需要 HTTPS 或 localhost）；背景图片和 Chart.js 统计图正常加载。直接双击打开（file:// 协议）时没有网络则背景退回渐变、统计页显示文字提示、Excel 导入/图表库不可用，其余功能正常。
+
+### 方式三：Windows 归档终端 + 手机 / 平板
+
+```powershell
+npm run archive:win
+# Windows 本机打开 http://localhost:43110
+```
+
+Windows 页面“设备同步”中会显示局域网访问地址、数据目录和随机同步 token。手机、iPad、Android 平板或 Mac 与 Windows 位于同一可信网络时：
+
+1. 打开显示的 `http://局域网IP:43110`；
+2. 进入“设备同步”，填写同一服务地址和 token；
+3. 点击“测试连接”与“立即上传”，随后可启用自动同步。
+
+普通局域网 HTTP 可以使用全部学习功能并同步，但移动浏览器不会把它视为安全上下文，因此不能保证安装 PWA 或 Service Worker 离线重开。完整“安装到主屏幕 + 离线重开”需要把此服务放在受信任 HTTPS 后面（例如受信任反向代理或 Tailscale HTTPS）。iOS/Android 在应用完全关闭后不会后台同步，重新打开或回到前台后才会补传。
+
+Windows 归档默认保存在 `%USERPROFILE%\Documents\虚拟自习室数据`。可通过环境变量覆盖：
+
+```powershell
+$env:VSR_ARCHIVE_PORT='43110'
+$env:VSR_ARCHIVE_DATA_DIR='D:\虚拟自习室数据'
+npm run archive:win
+```
+
+服务监听局域网；除匿名健康检查外，API 均要求随机 Bearer token。本机回环地址可查看 token，远程设备不能读取本机配置接口。不要把 token 发到不可信网络或写进共享文件。
+
+### macOS 软件
+
+在 Mac 源码目录安装依赖后构建：
+
+```bash
+npm install
+npm run dist:mac:arm64   # Apple Silicon
+# 或 npm run dist:mac:x64
+```
+
+macOS 端不启动归档服务，只作为离线客户端连接 Windows。未签名 / 未公证构建首次打开可能被 Gatekeeper 拦截；正式分发仍需 Apple Developer 签名与公证。
 
 ### 重新打包单文件版
 修改 `index.html` / `css/` / `js/` 后，运行：
@@ -63,6 +104,8 @@ node tools/build-single-file.mjs
 - Web Audio API — 白噪音与音乐合成
 - Unsplash — 背景图片（仅加载图片，不上传学习数据）
 - localStorage — 数据持久化
+- Node.js 内置 HTTP/crypto/fs — Windows 局域网归档服务，无后端框架依赖
+- Electron — Windows / macOS 桌面包装
 
 ## 在线访问
 
@@ -70,7 +113,7 @@ https://chouyangceng.github.io/virtual-study-room/
 
 ## 数据与隐私
 
-所有学习记录、任务和偏好只保存在浏览器本地，不会发送到项目服务器。清除浏览器站点数据会同时清除这些记录；建议定期在“专注统计”中导出 JSON 备份。
+默认情况下数据保存在当前设备 `localStorage`。配置 Windows 归档后，学习数据会用你填写的服务地址和 token 单向上传到 Windows；不会上传到项目作者的服务器。DeepSeek API Key、同步 token 与其他凭据不会进入自动归档或手工导出。Windows 不自动删除归档；客户端只会在收到与本次快照 SHA-256 匹配的持久化回执后，清理超出保留期且仍与上传内容完全一致的专注、复盘和每日收尾历史。
 
 ## 发布到 GitHub Pages
 
@@ -94,7 +137,7 @@ https://chouyangceng.github.io/virtual-study-room/
 │   ├── courses.js           # 课表与空闲时间
 │   ├── reviews.js           # 逐项任务复盘与日报导出
 │   ├── stats.js             # 统计图表
-│   ├── sync.js              # 设备间 JSON 备份导入导出
+│   ├── sync.js              # 自动归档、恢复、安全清理与手工备份
 │   ├── templates.js         # Excel 模板下载
 │   ├── audio.js             # 音频引擎
 │   └── background.js        # 背景管理
@@ -102,6 +145,9 @@ https://chouyangceng.github.io/virtual-study-room/
 ├── manifest.webmanifest     # PWA 清单
 ├── icons/                   # PWA 图标
 ├── tools/                   # 打包脚本
+├── shared/archive-core.js   # 快照校验、凭据剔除与安全清理核心
+├── server/                  # Windows 归档服务、存储与启动入口
+├── test/                    # 归档核心、HTTP API 与冒烟测试
 └── docs/                    # 文档
 ```
 

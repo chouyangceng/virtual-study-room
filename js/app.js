@@ -74,7 +74,7 @@ const App = {
     document.getElementById('btn-theme').addEventListener('click', () => this.toggleTheme());
     document.getElementById('btn-fullscreen').addEventListener('click', () => this.toggleFullscreen());
     document.getElementById('btn-panorama')?.addEventListener('click', () => this.togglePanorama());
-    document.getElementById('btn-refresh-app')?.addEventListener('click', () => this.refreshPage());
+    document.getElementById('btn-refresh-app')?.addEventListener('click', () => this.resumeTimer());
     document.getElementById('btn-exit-panorama')?.addEventListener('click', () => this.exitPanorama());
     document.getElementById('btn-achievements').addEventListener('click', () => this.openAchievements());
     document.getElementById('btn-download-templates').addEventListener('click', () => TemplateManager.download('all'));
@@ -115,9 +115,13 @@ const App = {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   },
 
-  refreshPage() {
-    this.showToast('正在刷新页面...');
-    setTimeout(() => window.location.reload(), 80);
+  resumeTimer() {
+    if (typeof PomodoroTimer === 'undefined') return;
+    if (PomodoroTimer.isRunning) {
+      this.showToast('计时正在进行中');
+      return;
+    }
+    PomodoroTimer.start();
   },
 
   startDailyRefresh() {

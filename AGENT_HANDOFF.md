@@ -125,6 +125,66 @@
 
 ## 更新记录
 
+### 2026-08-12 - Windows / macOS 实机构建安装与跨机同步
+
+- Windows x64 便携版构建并限时启动成功；产物位于 `outputs/installers/虚拟自习室 1.1.0.exe`。
+- Apple Silicon arm64 DMG/ZIP 构建成功，Mach-O 架构确认 `arm64`；应用已复制到 Mac 的 `/Applications/虚拟自习室.app`，本机 ad-hoc 深度签名、解除隔离后启动成功。
+- macOS 包没有 Developer ID 与 Apple 公证，Gatekeeper 仍不会把它视作可公开分发的可信安装包；当前安装方式仅适用于已验证的这台 Mac。
+- Mac 经 Tailscale 向 Windows 临时归档服务上传 367 字节测试快照；Mac 原文件、durable 回执与 Windows 落盘文件 SHA-256 均为 `18c8e489198ca96790e0272335e1b294d857a19d16918cee7b0c920cc3910966`。
+
+### 2026-08-12 - 顶部刷新键改为继续计时
+
+- 顶部 `↻` 不再重载页面；计时暂停或尚未开始时点击会继续/开始当前计时。
+- 计时正在运行时点击不会暂停，只提示“计时正在进行中”。
+- 按钮提示和无障碍名称已改为“继续计时”。
+
+### 2026-08-12 - 手机 / 平板 / macOS 客户端与 Windows 权威归档
+
+改动方向：
+
+- 保留现有 Vanilla JS/PWA 业务，新增手机与平板响应式触控布局；375px、768px 无页面级横向溢出，可见按钮至少 44px。
+- Windows Electron 启动 Node 归档与静态资源服务；也可用 `npm run archive:win` 独立启动，默认端口 `43110`、默认数据目录 `%USERPROFILE%\Documents\虚拟自习室数据`。
+- macOS Electron 作为同步客户端，不启动归档服务；新增 x64、arm64 构建入口。
+- 新增 v1 API：匿名健康检查、授权上传、归档列表/下载、仅回环本机配置。
+- 客户端在打开、联网、回前台与定时间隔时上传，失败退避且不阻塞本地计时/保存。
+- Windows 按设备保存不可变快照，原子落盘后重新计算 SHA-256，再返回 durable receipt。
+- 客户端只在 durable receipt 与本次上传哈希一致时清理，且只删除超出保留期、仍与上传快照完全一致的专注/复盘/每日收尾历史；每天最多一次。
+- 恢复归档前校验下载哈希，触发当前本机安全备份下载并进行二次确认。
+- 自动归档和手工导出均剔除 DeepSeek API Key、同步 token 和其他凭据。
+
+涉及文件：
+
+- `shared/archive-core.js`
+- `server/archive-server.js`、`server/archive-store.js`、`server/windows-archive.js`
+- `js/sync.js`、`index.html`、`css/style.css`、`sw.js`、`main.js`
+- `package.json`、`manifest.webmanifest`
+- `test/archive-core.test.js`、`test/archive-server.test.js`、`test/http-smoke.mjs`
+- `tools/check-js.mjs`、`tools/build-single-file.mjs`
+- `README.md`、`docs/设备同步快速说明.md`、`虚拟自习室.html`
+
+数据结构 / localStorage：
+
+- `syncSettings`：服务地址、token、设备名/deviceId、自动同步、间隔、保留期和自动清理设置（仅本机，不进入快照/导出）。
+- `syncDeviceId`：稳定客户端 ID（仅本机）。
+- `syncState`：最近回执、错误、清理日期与数量（仅本机）。
+- 自动归档 schema 为 `3`，手工 JSON 保持 schema `2` 兼容。
+
+验证：
+
+- `npm test`：11 项通过，覆盖凭据剔除、无回执不清理、编辑后不误删、重复记录计数交集、认证、合法落盘/哈希、非法 schema/device/body、远程 local-config、路径穿越和静态白名单。
+- `npm run check:js`：26 个 JS/MJS 文件通过。
+- `npm run smoke:archive`：真实 HTTP 上传、落盘、列表/下载与哈希通过。
+- 应用内浏览器：375px、768px、桌面页面加载和同步面板通过；真实上传返回回执并在 Windows 临时目录生成归档；控制台无错误。
+- `npm run build:single`：单文件版重新生成，自动网络同步在 `file://` 下明确禁用，手工导入导出保留。
+
+已知限制：
+
+- 普通 LAN HTTP 可学习和同步，但完整 PWA 安装/Service Worker 离线重开需要受信任 HTTPS。
+- iOS/Android 完全关闭页面后不能后台同步，只会在重新打开/联网/回前台后补传。
+- macOS 安装包必须在 Mac 上真实构建验证；未签名构建不适合公开分发，签名与公证尚未配置。
+- 2026-08-12 Apple Silicon Mac 实机核验：ZIP SHA-256 与 Windows 一致；纯逻辑测试 6/6、`check:js`（26 文件）及 `build:single` 通过。该受限执行环境禁止回环端口监听（HTTP 测试统一 `EPERM`），且 DNS 无法解析 `registry.npmjs.org`（`ENOTFOUND`），未能安装 `electron`/`electron-builder`，因此 arm64 Electron 启动和 DMG/ZIP 构建仍未完成，不能标记为已验证产物。
+- 当前是单向不可变归档与显式恢复，不是冲突合并或实时协作。
+
 ### 2026-08-09 - 项目问题清单归档
 
 改动方向：

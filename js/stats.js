@@ -479,7 +479,9 @@ const Stats = {
     try { appSettings = JSON.parse(localStorage.getItem('appSettings') || '{}'); } catch (e) {}
     try { audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}'); } catch (e) {}
     try { deepseekSettings = JSON.parse(localStorage.getItem('deepseekSettings') || '{}'); } catch (e) {}
-    const { apiKey, ...deepseekExport } = deepseekSettings || {};
+    const deepseekExport = typeof VsrArchiveCore !== 'undefined'
+      ? VsrArchiveCore.sanitizeAppData({ deepseekSettings }).deepseekSettings
+      : Object.fromEntries(Object.entries(deepseekSettings || {}).filter(([key]) => !/(?:api[-_]?key|token|authorization|password|secret|credential)/i.test(key)));
     const dayClosePromptedDate = localStorage.getItem('dayClosePromptedDate') || '';
     const data = {
       schemaVersion: 2,

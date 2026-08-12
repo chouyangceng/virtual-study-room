@@ -1515,9 +1515,46 @@ body {
 .import-hub-options { display: grid; gap: 8px; color: var(--text-secondary); font-size: 12px; }
 .import-hub-options label { display: flex; align-items: center; gap: 7px; }
 .import-hub-options input { accent-color: var(--accent); }
-.sync-content { width: min(480px, calc(100vw - 28px)); }
-.sync-body { display: grid; gap: 12px; }
+.sync-content { width: min(820px, calc(100vw - 28px)); max-height: min(92vh, 920px); }
+.sync-body { display: grid; gap: 14px; overflow-y: auto; padding-right: 4px; }
 .sync-body p { color: var(--text-secondary); font-size: 12px; line-height: 1.7; }
+.sync-status-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.sync-status-row p { margin: 0; }
+.sync-state-badge { flex: 0 0 auto; padding: 6px 10px; border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-size: 11px; font-weight: 700; }
+.sync-state-badge[data-state="offline"] { background: rgba(120, 128, 145, .14); color: var(--text-muted); }
+.sync-state-badge[data-state="syncing"] { background: rgba(78, 135, 255, .14); color: var(--accent); }
+.sync-state-badge[data-state="success"] { background: rgba(40, 170, 110, .14); color: var(--success); }
+.sync-state-badge[data-state="failed"] { background: rgba(220, 70, 80, .14); color: var(--danger); }
+.sync-section { display: grid; gap: 12px; padding: 15px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); }
+.sync-section h3 { margin: 0; color: var(--text-primary); font-size: 14px; }
+.sync-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.sync-form-grid label { display: grid; gap: 6px; color: var(--text-secondary); font-size: 11px; }
+.sync-form-grid input { width: 100%; min-height: 44px; padding: 9px 11px; border: 1px solid var(--input-border); border-radius: 9px; background: var(--input-bg); color: var(--text-primary); font: inherit; }
+.sync-form-grid .sync-wide { grid-column: 1 / -1; }
+.sync-secret-input { display: flex; gap: 7px; }
+.sync-secret-input input { min-width: 0; flex: 1; }
+.sync-secret-input button { min-width: 56px; min-height: 44px; }
+.sync-toggles { display: grid; gap: 9px; color: var(--text-secondary); font-size: 12px; }
+.sync-toggles label { display: flex; align-items: flex-start; gap: 8px; min-height: 44px; padding: 9px 0; }
+.sync-toggles input { width: 18px; height: 18px; accent-color: var(--accent); }
+.sync-note { margin: 0; }
+.sync-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sync-actions button { min-height: 44px; }
+.sync-warning { padding: 11px 13px; border: 1px solid rgba(220, 150, 40, .35); border-radius: 10px; background: rgba(220, 150, 40, .1); color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+.sync-network-disabled { opacity: .68; }
+.sync-local-config { display: grid; gap: 5px; padding: 13px; border-radius: 11px; background: var(--accent-soft); color: var(--text-secondary); font-size: 11px; overflow-wrap: anywhere; }
+.sync-local-config strong { color: var(--text-primary); font-size: 13px; }
+.sync-local-config code { user-select: all; }
+.sync-archive-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sync-archive-list { display: grid; gap: 8px; }
+.sync-archive-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-bg); }
+.sync-archive-item > div:first-child { display: grid; min-width: 0; gap: 3px; }
+.sync-archive-item strong { color: var(--text-primary); font-size: 12px; }
+.sync-archive-item small, .sync-archive-item code { overflow: hidden; color: var(--text-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.sync-archive-item > div:last-child { display: flex; flex: 0 0 auto; gap: 5px; }
+.sync-archive-item button { min-height: 44px; }
+.sync-empty { margin: 0; }
+.sync-manual p { margin: 0; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
@@ -1549,7 +1586,8 @@ body {
   #app { min-height: 100dvh; height: auto; padding: 8px; gap: 8px; }
   #topbar { padding: 8px 10px; }
   .logo-text { font-size: 18px; }
-  .topbar-btn { width: 36px; height: 36px; font-size: 16px; }
+  .topbar-actions { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+  .topbar-btn { width: 44px; min-width: 44px; height: 44px; font-size: 16px; }
   #main-content { display: flex; flex-direction: column; overflow: visible; }
   #timer-section { order: 1; padding: 22px 14px; }
   #task-panel { order: 2; min-height: 240px; max-height: 360px; }
@@ -1561,6 +1599,12 @@ body {
   .clock-card, #custom-timer { width: 100%; min-width: 0; }
   .modal-content { padding: 16px; }
   .modal { padding: 10px; }
+  .sync-content { width: calc(100vw - 12px); max-height: 96dvh; padding: 14px; }
+  .sync-form-grid { grid-template-columns: 1fr; }
+  .sync-form-grid .sync-wide { grid-column: auto; }
+  .sync-status-row, .sync-archive-item { align-items: flex-start; flex-direction: column; }
+  .sync-archive-item > div:last-child, .sync-actions { width: 100%; }
+  .sync-archive-item button, .sync-actions button { flex: 1; }
   .stats-summary-row,
   .focus-insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #audio-bar { flex-direction: column; gap: 8px; }
@@ -1961,4 +2005,26 @@ body.panorama-mode[data-theme="dark"] #bg-overlay { background: linear-gradient(
   body.panorama-mode #timer-controls { top: calc(50% + min(39vw, 176px)); }
   body.panorama-mode #topbar { top: 12px; right: 14px; }
   body.panorama-mode #panorama-exit { top: 58px; right: 14px; }
+}
+
+/* Final mobile overrides: keep touch targets usable after later theme rules. */
+@media (max-width: 760px) {
+  button, input, select { touch-action: manipulation; }
+  button { min-width: 44px; min-height: 44px; }
+  .topbar-btn { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  .icon-btn, .modal-close, #btn-bg-toggle { width: 44px; height: 44px; }
+  .mode-btn, .mini-action, .primary-btn.compact { min-height: 44px; padding-block: 9px; }
+  body.panorama-mode #topbar .topbar-actions > #btn-panorama,
+  body.panorama-mode #topbar .topbar-actions > #btn-refresh-app,
+  body.panorama-mode #topbar .topbar-actions > #btn-theme,
+  body.panorama-mode #topbar .topbar-actions > #btn-fullscreen { width: 44px; height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
