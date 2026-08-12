@@ -1,11 +1,13 @@
 /* ============================================
    app.js - Main Application Controller
-   Theme, fullscreen, achievements, onboarding
+   Theme, fullscreen and achievements
    ============================================ */
 
 const App = {
   theme: 'light',
   achievements: [],
+  studyDayKey: '',
+  dayRefreshTimer: null,
 
   // Achievement definitions
   achievementDefs: [
@@ -37,21 +39,45 @@ const App = {
     Background.init();
     AudioEngine.init();
     PomodoroTimer.init();
+    SubjectManager.init();
+    CourseManager.init();
     TaskManager.init();
+    PlanManager.init();
+    ImportHub.init();
+    SyncManager.init();
     Stats.init();
+    ReviewManager.init();
+    if (typeof GoalManager !== 'undefined') GoalManager.init();
+    this.startDailyRefresh();
 
     // Update streak/total display
     this.updateStreakAndTotal();
     this.checkAchievements();
+    this.remindBackup();
+  },
 
-    // Handle audio context prompt
-    this.handleAudioPrompt();
+  remindBackup() {
+    try {
+      const key = 'lastBackupReminder';
+      const last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last > 30 * 24 * 60 * 60 * 1000) {
+        localStorage.setItem(key, String(Date.now()));
+        setTimeout(() => {
+          if (typeof Stats !== 'undefined') Stats.exportData();
+          this.showToast('📤 建议定期导出备份：数据仅存本机，清理浏览器数据会丢失');
+        }, 4000);
+      }
+    } catch (e) { /* ignore */ }
   },
 
   bindUI() {
     document.getElementById('btn-theme').addEventListener('click', () => this.toggleTheme());
     document.getElementById('btn-fullscreen').addEventListener('click', () => this.toggleFullscreen());
+    document.getElementById('btn-panorama')?.addEventListener('click', () => this.togglePanorama());
+    document.getElementById('btn-refresh-app')?.addEventListener('click', () => this.resumeTimer());
+    document.getElementById('btn-exit-panorama')?.addEventListener('click', () => this.exitPanorama());
     document.getElementById('btn-achievements').addEventListener('click', () => this.openAchievements());
+    document.getElementById('btn-download-templates').addEventListener('click', () => TemplateManager.download('all'));
 
     // Achievement modal close
     const achModal = document.getElementById('achievements-modal');
@@ -60,7 +86,8 @@ const App = {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return;
       if (e.code === 'Space') {
         e.preventDefault();
         PomodoroTimer.toggle();
@@ -68,7 +95,76 @@ const App = {
       if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) {
         PomodoroTimer.reset();
       }
+      if (e.code === 'KeyI' && e.ctrlKey && e.shiftKey) {
+        e.preventDefault();
+        if (typeof SyncManager !== 'undefined') SyncManager.open();
+      }
+      if (e.code === 'KeyE' && e.ctrlKey && e.shiftKey) {
+        e.preventDefault();
+        if (typeof Stats !== 'undefined') Stats.exportData();
+      }
+      if (e.code === 'Escape' && document.body.classList.contains('panorama-mode')) {
+        this.exitPanorama();
+      }
     });
+  },
+
+  getStudyDateKey(date = new Date()) {
+    const d = new Date(date);
+    if (d.getHours() < 7) d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  },
+
+  resumeTimer() {
+    if (typeof PomodoroTimer === 'undefined') return;
+    if (PomodoroTimer.isRunning) {
+      this.showToast('计时正在进行中');
+      return;
+    }
+    PomodoroTimer.start();
+  },
+
+  startDailyRefresh() {
+    this.studyDayKey = this.getStudyDateKey();
+    this.refreshDailyState();
+    if (this.dayRefreshTimer) clearInterval(this.dayRefreshTimer);
+    this.dayRefreshTimer = setInterval(() => {
+      const key = this.getStudyDateKey();
+      if (key !== this.studyDayKey) {
+        this.studyDayKey = key;
+        this.refreshDailyState();
+        this.showToast('新的一天开始了，固定每日任务已刷新');
+      }
+    }, 60000);
+  },
+
+  refreshDailyState() {
+    const planChanged = typeof PlanManager !== 'undefined' && PlanManager.refreshDailyState?.();
+    const taskChanged = typeof TaskManager !== 'undefined' && TaskManager.refreshDailyState?.();
+    if (planChanged && PlanManager.render) PlanManager.render();
+    if (taskChanged && TaskManager.render) TaskManager.render();
+    if (typeof PomodoroTimer !== 'undefined') PomodoroTimer.loadTodayData?.();
+    if (typeof Stats !== 'undefined') {
+      Stats.needsRefresh = true;
+      Stats.updateDashboardInsights?.();
+    }
+    this.updateStreakAndTotal();
+  },
+
+  togglePanorama() {
+    if (document.body.classList.contains('panorama-mode')) {
+      this.exitPanorama();
+      return;
+    }
+    document.body.classList.add('panorama-mode');
+    const exit = document.getElementById('panorama-exit');
+    if (exit) exit.setAttribute('aria-hidden', 'false');
+  },
+
+  exitPanorama() {
+    document.body.classList.remove('panorama-mode');
+    const exit = document.getElementById('panorama-exit');
+    if (exit) exit.setAttribute('aria-hidden', 'true');
   },
 
   loadState() {
@@ -82,7 +178,7 @@ const App = {
   },
 
   saveState() {
-    localStorage.setItem('appSettings', JSON.stringify({
+    SafeStore.set('appSettings', JSON.stringify({
       theme: this.theme,
       achievements: this.achievements,
     }));
@@ -114,29 +210,23 @@ const App = {
     }
   },
 
-  handleAudioPrompt() {
-    const prompt = document.getElementById('audio-prompt');
-    // Show prompt briefly
-    prompt.classList.remove('hidden');
-    const dismiss = () => {
-      prompt.classList.add('hidden');
-    };
-    prompt.addEventListener('click', dismiss);
-    setTimeout(dismiss, 3000);
-  },
-
   // ---- Stats helpers ----
 
   getStats() {
-    const sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]');
+    let sessions = [];
+    try {
+      const storedSessions = JSON.parse(localStorage.getItem('focusSessions') || '[]');
+      sessions = Array.isArray(storedSessions) ? storedSessions : [];
+    } catch (e) {}
     const totalSessions = sessions.length;
-    const totalMinutes = sessions.reduce((s, r) => s + r.duration, 0);
+    const totalMinutes = sessions.reduce((s, r) => s + (Number(r.duration) || 0), 0);
     const totalHours = totalMinutes / 60;
 
     // Max daily
     const dailyMap = {};
     sessions.forEach(s => {
-      dailyMap[s.date] = (dailyMap[s.date] || 0) + s.duration;
+      if (!s.date) return;
+      dailyMap[s.date] = (dailyMap[s.date] || 0) + (Number(s.duration) || 0);
     });
     const maxDaily = Object.values(dailyMap).reduce((max, v) => Math.max(max, v), 0);
 
@@ -146,7 +236,7 @@ const App = {
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const key = this.getStudyDateKey(d);
       if (dailyMap[key]) {
         currentStreak++;
       } else if (i > 0) {
@@ -166,7 +256,11 @@ const App = {
     });
 
     // Completed tasks
-    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    let tasks = [];
+    try {
+      const storedTasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+      tasks = Array.isArray(storedTasks) ? storedTasks : [];
+    } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
 
     return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks };
@@ -229,9 +323,7 @@ const App = {
 
     document.getElementById('streak-days').textContent = stats.currentStreak + ' 天';
     document.getElementById('total-hours').textContent = stats.totalHours.toFixed(1) + ' 小时';
-
-    // Update total sessions in settings if it changed
-    document.getElementById('session-counter-display')?.remove();
+    if (typeof Stats !== 'undefined') Stats.updateDashboardInsights();
   },
 
   // ---- Toast ----

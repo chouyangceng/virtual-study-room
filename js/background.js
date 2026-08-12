@@ -1,32 +1,32 @@
 /* ============================================
    background.js - Background image management
-   Uses Picsum for random beautiful images
+   Curated scenic backgrounds with offline gradients
    ============================================ */
 
 const Background = {
   currentIndex: 0,
   fallbackGradients: [
-    'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-    'linear-gradient(135deg, #2d1b69 0%, #1b3a4b 50%, #1a5e3f 100%)',
-    'linear-gradient(135deg, #3a1c71 0%, #4a2c6e 50%, #1e3c5c 100%)',
-    'linear-gradient(135deg, #0c1b33 0%, #1a3a5c 50%, #2d5a3f 100%)',
-    'linear-gradient(135deg, #1a1a3e 0%, #2d1b4e 50%, #3a2a5e 100%)',
+    'linear-gradient(135deg, #2d2d3f 0%, #3f3a52 50%, #5a4a3f 100%)',
+    'linear-gradient(135deg, #403552 0%, #3f4a52 50%, #3f5248 100%)',
+    'linear-gradient(135deg, #4a3f5c 0%, #564a5c 50%, #4a4a58 100%)',
+    'linear-gradient(135deg, #2a3a4a 0%, #3a4a5a 50%, #3a4a3f 100%)',
+    'linear-gradient(135deg, #3a3a50 0%, #453f56 50%, #50455c 100%)',
   ],
 
-  // Curated Unsplash photo IDs for study/cozy atmospheres
+  // Curated Unsplash landscapes: mountains, forests, lakes, ocean and desert.
   photoIds: [
-    'photo-1507003211169-0a1dd7228f2d',
-    'photo-1499209974431-9dddcece7f88',
-    'photo-1512820792206-6004efcf6e2b',
-    'photo-1440778303588-435521a205bc',
-    'photo-1518659522319-8fc7d1d5822d',
-    'photo-1507525428034-b723cf961d3e',
-    'photo-1506126613408-eca07ce68773',
+    'photo-1501785888041-af3ef285b470',
     'photo-1470770841072-f978cf4d019e',
-    'photo-1432821596592-2c1d78e7b7c2',
-    'photo-1452421822248-d4c2b47f0c81',
-    'photo-1518837695005-2083093ee35b',
-    'photo-1505144808419-1957a94ca61e',
+    'photo-1464822759023-fed622ff2c3b',
+    'photo-1441974231531-c6227db76b6e',
+    'photo-1473448912268-2022ce9509d8',
+    'photo-1507525428034-b723cf961d3e',
+    'photo-1433086966358-54859d0ed716',
+    'photo-1500534314209-a25ddb2bd429',
+    'photo-1500530855697-b586d89ba3ee',
+    'photo-1469474968028-56623f02e42e',
+    'photo-1470252649378-9c29740c9fa8',
+    'photo-1428908728789-d2de25dbd4e2',
   ],
 
   init() {

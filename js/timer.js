@@ -15,8 +15,18 @@ const PomodoroTimer = {
   isWork: true,
   sessionCount: 0,
   intervalId: null,
+  dateIntervalId: null,
+  breakAutoTimer: null,
+  generation: 0,
   todayMinutes: 0,
+  todayDataDate: null,
   currentSessionStart: null,
+  activeSeconds: 0,
+  lastTickAt: null,
+  endAt: null,
+  currentSessionName: '',
+  currentSessionDetail: '',
+  currentSessionSubjectId: '',
 
   init() {
     this.loadSettings();
@@ -26,11 +36,22 @@ const PomodoroTimer = {
     this.updateClock();
     this.updateDate();
     setInterval(() => this.updateClock(), 1000);
+    if (this.dateIntervalId) clearInterval(this.dateIntervalId);
+    this.dateIntervalId = setInterval(() => this.updateDate(), 60000);
   },
 
   bindUI() {
     document.getElementById('btn-start-pause').addEventListener('click', () => this.toggle());
     document.getElementById('btn-reset').addEventListener('click', () => this.reset());
+    document.getElementById('session-task-input')?.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !this.isRunning) this.toggle();
+    });
+    document.getElementById('session-subject-select')?.addEventListener('change', event => {
+      if (typeof SubjectManager !== 'undefined') {
+        SubjectManager.currentSubjectId = event.target.value;
+        SafeStore.set('currentSubjectId', event.target.value);
+      }
+    });
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -73,7 +94,7 @@ const PomodoroTimer = {
   },
 
   saveSettings() {
-    localStorage.setItem('timerSettings', JSON.stringify({
+    SafeStore.set('timerSettings', JSON.stringify({
       workDuration: this.workDuration,
       breakDuration: this.breakDuration,
       longBreakDuration: this.longBreakDuration,
@@ -85,6 +106,8 @@ const PomodoroTimer = {
 
   loadTodayData() {
     const today = this.getDateString();
+    this.todayDataDate = today;
+    this.todayMinutes = 0;
     try {
       const data = JSON.parse(localStorage.getItem('dailyData'));
       if (data && data.date === today) {
@@ -95,6 +118,7 @@ const PomodoroTimer = {
   },
 
   getDateString() {
+    if (typeof App !== 'undefined' && App.getStudyDateKey) return App.getStudyDateKey();
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   },
@@ -118,10 +142,27 @@ const PomodoroTimer = {
 
   start() {
     if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+    if (this.isWork && !this.currentSessionName) {
+      const input = document.getElementById('session-task-input');
+      const typed = input?.value.trim() || '';
+      const confirmed = typed || window.prompt('确认本次专注的小任务名称：', '')?.trim();
+      if (!confirmed) {
+        if (typeof App !== 'undefined') App.showToast('请先填写这次要完成的小任务');
+        input?.focus();
+        return;
+      }
+      this.currentSessionName = confirmed;
+      this.currentSessionDetail = typed ? typed : confirmed;
+      this.currentSessionSubjectId = document.getElementById('session-subject-select')?.value || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
+      if (input) input.value = confirmed;
+    }
     this.isRunning = true;
     if (!this.currentSessionStart) {
       this.currentSessionStart = Date.now();
+      if (this.isWork) this.recordActivity('attempts');
     }
+    this.lastTickAt = Date.now();
+    this.endAt = this.lastTickAt + this.remaining * 1000;
 
     const btn = document.getElementById('btn-start-pause');
     btn.textContent = '暂停';
@@ -134,6 +175,7 @@ const PomodoroTimer = {
   },
 
   pause() {
+    this.syncElapsed();
     this.isRunning = false;
     clearInterval(this.intervalId);
     this.intervalId = null;
@@ -143,10 +185,22 @@ const PomodoroTimer = {
   },
 
   reset() {
+    if (this.isRunning) this.syncElapsed();
+    this.generation++;
+    if (this.breakAutoTimer) { clearTimeout(this.breakAutoTimer); this.breakAutoTimer = null; }
+    if (this.isWork && this.currentSessionStart && this.activeSeconds >= 5) {
+      this.recordActivity('interruptions');
+    }
     this.isRunning = false;
     clearInterval(this.intervalId);
     this.intervalId = null;
     this.currentSessionStart = null;
+    this.activeSeconds = 0;
+    this.currentSessionName = '';
+    this.currentSessionDetail = '';
+    this.currentSessionSubjectId = '';
+    this.lastTickAt = null;
+    this.endAt = null;
     this.remaining = this.isWork ? this.workDuration : this.breakDuration;
     this.total = this.remaining;
 
@@ -160,7 +214,9 @@ const PomodoroTimer = {
   },
 
   tick() {
-    this.remaining--;
+    if (!this.isRunning) return;
+    const now = Date.now();
+    this.remaining = Math.max(0, Math.ceil((this.endAt - now) / 1000));
     this.render();
 
     if (this.remaining <= 0) {
@@ -168,7 +224,16 @@ const PomodoroTimer = {
     }
   },
 
+  syncElapsed() {
+    if (!this.isRunning || !this.lastTickAt) return;
+    const now = Date.now();
+    this.activeSeconds += Math.max(0, (now - this.lastTickAt) / 1000);
+    this.lastTickAt = now;
+    if (this.endAt) this.remaining = Math.max(0, Math.ceil((this.endAt - now) / 1000));
+  },
+
   complete() {
+    this.syncElapsed();
     clearInterval(this.intervalId);
     this.intervalId = null;
     this.isRunning = false;
@@ -178,8 +243,11 @@ const PomodoroTimer = {
 
     if (this.isWork) {
       // Record the completed session
-      const durationMinutes = Math.round((Date.now() - this.currentSessionStart) / 60000);
-      this.recordSession(durationMinutes);
+      const durationMinutes = Math.max(1, Math.round(this.activeSeconds / 60));
+      this.recordSession(durationMinutes, this.currentSessionStart);
+      this.currentSessionName = '';
+      this.currentSessionDetail = '';
+      this.currentSessionSubjectId = '';
       this.sessionCount++;
 
       // Determine next break type
@@ -193,6 +261,8 @@ const PomodoroTimer = {
       document.getElementById('timer-status-badge').classList.add('break');
       document.getElementById('btn-start-pause').classList.add('break-mode');
       document.getElementById('btn-start-pause').textContent = '开始休息';
+      const sessionInput = document.getElementById('session-task-input');
+      if (sessionInput) sessionInput.value = '';
 
       // Update session dots
       this.updateDots();
@@ -201,7 +271,10 @@ const PomodoroTimer = {
       if (typeof App !== 'undefined') App.showToast('🎉 专注完成！休息一下吧~');
 
       // Auto-start break after short delay
-      setTimeout(() => {
+      const generationAtComplete = this.generation;
+      this.breakAutoTimer = setTimeout(() => {
+        this.breakAutoTimer = null;
+        if (generationAtComplete !== this.generation) return;
         if (!this.isRunning && !this.isWork) {
           this.start();
         }
@@ -222,6 +295,9 @@ const PomodoroTimer = {
     }
 
     this.currentSessionStart = null;
+    this.activeSeconds = 0;
+    this.lastTickAt = null;
+    this.endAt = null;
     this.render();
     this.saveSettings();
   },
@@ -240,20 +316,21 @@ const PomodoroTimer = {
         g.gain.setValueAtTime(0.15, now + i * 0.15);
         g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(AudioEngine.masterGain || ctx.destination);
         osc.start(now + i * 0.15);
         osc.stop(now + i * 0.15 + 0.4);
       });
     } catch(e) {}
   },
 
-  recordSession(durationMinutes) {
+  recordSession(durationMinutes, startedAt = null) {
     const today = this.getDateString();
+    if (this.todayDataDate !== today) this.loadTodayData();
     const actualDuration = Math.max(1, durationMinutes || Math.round(this.workDuration / 60));
     this.todayMinutes += actualDuration;
 
     // Save daily data
-    localStorage.setItem('dailyData', JSON.stringify({
+    SafeStore.set('dailyData', JSON.stringify({
       date: today,
       minutes: this.todayMinutes,
     }));
@@ -261,13 +338,25 @@ const PomodoroTimer = {
     // Save session record
     let sessions = [];
     try { sessions = JSON.parse(localStorage.getItem('focusSessions') || '[]'); } catch(e) {}
+    if (!Array.isArray(sessions)) sessions = [];
+    if (sessions.length >= 5000) {
+      sessions = sessions.slice(-4000);
+      if (typeof App !== 'undefined') App.showToast('⚠️ 专注记录已达上限，最早的记录已自动清理。请定期导出备份。');
+    }
+    const subjectId = this.currentSessionSubjectId || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
     sessions.push({
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       date: today,
       duration: actualDuration,
       type: 'work',
       timestamp: Date.now(),
+      startedAt: startedAt || Date.now(),
+      sessionName: this.currentSessionName || '未命名专注',
+      sessionDetail: this.currentSessionDetail || this.currentSessionName || '',
+      subjectId,
+      subjectName: subjectId && typeof SubjectManager !== 'undefined' ? SubjectManager.getName(subjectId) : '未分类',
     });
-    localStorage.setItem('focusSessions', JSON.stringify(sessions));
+    SafeStore.set('focusSessions', JSON.stringify(sessions));
 
     // Update stats
     if (typeof Stats !== 'undefined') Stats.needsRefresh = true;
@@ -277,6 +366,17 @@ const PomodoroTimer = {
     }
 
     this.updateTodayDisplay();
+  },
+
+  recordActivity(field) {
+    let activity = {};
+    try { activity = JSON.parse(localStorage.getItem('focusActivity') || '{}'); } catch (e) {}
+    if (!activity || typeof activity !== 'object' || Array.isArray(activity)) activity = {};
+    const today = this.getDateString();
+    const day = activity[today] || { attempts: 0, interruptions: 0 };
+    day[field] = (Number(day[field]) || 0) + 1;
+    activity[today] = day;
+    SafeStore.set('focusActivity', JSON.stringify(activity));
   },
 
   updateDots() {
@@ -298,6 +398,9 @@ const PomodoroTimer = {
 
   updateClock() {
     const now = new Date();
+    if (this.todayDataDate && this.todayDataDate !== this.getDateString()) {
+      this.loadTodayData();
+    }
     document.getElementById('current-clock').textContent =
       now.toLocaleTimeString('zh-CN', { hour12: false });
   },
@@ -307,10 +410,6 @@ const PomodoroTimer = {
     const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
     document.getElementById('current-date').textContent =
       `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${weekdays[now.getDay()]}`;
-    // Update date once per hour is fine since we update clock every second
-    setTimeout(() => {
-      setInterval(() => this.updateDate(), 60000);
-    }, (60 - new Date().getSeconds()) * 1000);
   },
 
   render() {

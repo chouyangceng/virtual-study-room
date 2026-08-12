@@ -14,13 +14,32 @@ const AudioEngine = {
   isMuted: false,
 
   init() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      this.disableControls('当前浏览器不支持 Web Audio');
+      return;
+    }
+    try {
+      this.ctx = new AudioContextClass();
+    } catch (e) {
+      this.disableControls('音频不可用');
+      return;
+    }
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.volume;
     this.masterGain.connect(this.ctx.destination);
 
     this.bindUI();
     this.loadSettings();
+  },
+
+  disableControls(message) {
+    ['sound-select', 'btn-play-audio', 'btn-mute', 'volume-slider'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = true;
+    });
+    const nowPlaying = document.getElementById('now-playing');
+    if (nowPlaying) nowPlaying.textContent = message;
   },
 
   bindUI() {
@@ -63,7 +82,7 @@ const AudioEngine = {
   },
 
   saveSettings() {
-    localStorage.setItem('audioSettings', JSON.stringify({
+    SafeStore.set('audioSettings', JSON.stringify({
       volume: this.volume,
       isMuted: this.isMuted,
       currentSound: this.currentSound,
@@ -71,6 +90,7 @@ const AudioEngine = {
   },
 
   async selectSound(sound) {
+    if (!this.ctx) return;
     this.stopAll();
     this.currentSound = sound;
     this.saveSettings();
@@ -92,6 +112,7 @@ const AudioEngine = {
   },
 
   togglePlay() {
+    if (!this.ctx) return;
     if (this.currentSound === 'none') {
       // Default to rain if nothing selected
       document.getElementById('sound-select').value = 'rain';
@@ -112,6 +133,7 @@ const AudioEngine = {
   },
 
   toggleMute() {
+    if (!this.ctx || !this.masterGain) return;
     this.isMuted = !this.isMuted;
     document.getElementById('btn-mute').textContent = this.isMuted ? '🔇' : '🔊';
     this.masterGain.gain.setTargetAtTime(
@@ -123,10 +145,10 @@ const AudioEngine = {
   },
 
   setVolume(v) {
-    this.volume = v;
+    this.volume = Math.max(0, Math.min(1, Number(v) || 0));
     document.getElementById('volume-label').textContent = Math.round(v * 100) + '%';
     if (!this.isMuted) {
-      this.masterGain.gain.setTargetAtTime(v, this.ctx.currentTime, 0.1);
+      this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.1);
     }
     this.saveSettings();
   },
@@ -145,6 +167,7 @@ const AudioEngine = {
   },
 
   startSound(sound) {
+    if (!this.ctx) return;
     switch(sound) {
       case 'rain': this.createRain(); break;
       case 'cafe': this.createCafe(); break;
