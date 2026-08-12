@@ -71,6 +71,11 @@ $env:VSR_ARCHIVE_DATA_DIR='D:\虚拟自习室数据'
 npm run archive:win
 ```
 
+如需将 Windows Electron 配置与权威归档统一放到指定磁盘，可设置用户环境变量
+`VSR_DATA_ROOT`。例如设为 `E:\虚拟自习室\学习数据` 后，应用状态写入
+`应用数据` 子目录，权威归档写入 `Windows归档` 子目录。
+也可在启动程序时传入 `--vsr-data-root=E:\虚拟自习室\学习数据`；启动参数优先于环境变量，适合固定磁盘安装与快捷方式。
+
 服务监听局域网；除匿名健康检查外，API 均要求随机 Bearer token。本机回环地址可查看 token，远程设备不能读取本机配置接口。不要把 token 发到不可信网络或写进共享文件。
 
 ### macOS 软件
