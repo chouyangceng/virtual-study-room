@@ -245,7 +245,11 @@ const PlanManager = {
   },
 
   render() {
-    document.querySelectorAll('.plan-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.scope === this.activeScope));
+    document.querySelectorAll('.plan-tab').forEach(tab => {
+      const selected = tab.dataset.scope === this.activeScope;
+      tab.classList.toggle('active', selected);
+      tab.setAttribute('aria-selected', String(selected));
+    });
     const plans = this.visiblePlans().sort((a, b) => (a.completed - b.completed) || (b.createdAt - a.createdAt));
     const completed = plans.filter(plan => plan.completed).length;
     const labels = { weekly: '本周计划', monthly: '本月计划', all: '全部计划' };

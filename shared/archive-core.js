@@ -245,6 +245,100 @@
     };
   }
 
+  function removeSessionRecords(appData, sessionIds, options) {
+    const source = appData && typeof appData === 'object' ? clone(appData) : {};
+    const clearAll = Boolean(options && options.clearAll);
+    const requestedIds = new Set((Array.isArray(sessionIds) ? sessionIds : []).map(String).filter(Boolean));
+    const sessions = Array.isArray(source.focusSessions) ? source.focusSessions : [];
+    const shouldRemove = session => clearAll || requestedIds.has(String(session && session.id || ''));
+    const removedSessions = sessions.filter(shouldRemove);
+    const remainingSessions = sessions.filter(session => !shouldRemove(session));
+    const removedIds = new Set(removedSessions.map(session => String(session && session.id || '')).filter(Boolean));
+    requestedIds.forEach(id => removedIds.add(id));
+
+    source.focusSessions = remainingSessions;
+    const sessionReviews = Array.isArray(source.sessionReviews) ? source.sessionReviews : [];
+    source.sessionReviews = clearAll
+      ? []
+      : sessionReviews.filter(review => !removedIds.has(String(review && review.sessionId || '')));
+
+    const closes = Array.isArray(source.dailyCloseEntries) ? source.dailyCloseEntries : [];
+    source.dailyCloseEntries = closes.map(entry => {
+      if (!entry || typeof entry !== 'object') return entry;
+      const next = { ...entry };
+      if (Array.isArray(next.sessionsSnapshot)) {
+        next.sessionsSnapshot = clearAll ? [] : next.sessionsSnapshot.filter(session => !removedIds.has(String(session && session.id || '')));
+      }
+      if (Array.isArray(next.sessionReviewsSnapshot)) {
+        next.sessionReviewsSnapshot = clearAll ? [] : next.sessionReviewsSnapshot.filter(review => !removedIds.has(String(review && review.sessionId || '')));
+      }
+      if (clearAll || removedSessions.some(session => session && session.date === next.date)) {
+        const records = Array.isArray(next.sessionsSnapshot)
+          ? next.sessionsSnapshot
+          : remainingSessions.filter(session => session && session.date === next.date);
+        next.focusMinutes = records.reduce((sum, session) => sum + Math.max(0, Number(session && session.duration) || 0), 0);
+        next.updatedAt = new Date().toISOString();
+      }
+      return next;
+    });
+
+    const removedByTask = new Map();
+    removedSessions.forEach(session => {
+      const taskId = String(session && session.taskId || '');
+      if (!taskId) return;
+      const current = removedByTask.get(taskId) || { count: 0, minutes: 0 };
+      current.count += 1;
+      current.minutes += Math.max(0, Number(session.duration) || 0);
+      removedByTask.set(taskId, current);
+    });
+    if (Array.isArray(source.tasks) && (clearAll || removedByTask.size)) {
+      source.tasks = source.tasks.map(task => {
+        if (clearAll) return { ...task, completedPomodoros: 0, focusMinutes: 0, lastFocusedAt: null };
+        const removed = removedByTask.get(String(task && task.id || ''));
+        if (!removed) return task;
+        const remainingForTask = remainingSessions.filter(session => String(session && session.taskId || '') === String(task.id));
+        return {
+          ...task,
+          completedPomodoros: Math.max(0, (Number(task.completedPomodoros) || 0) - removed.count),
+          focusMinutes: Math.max(0, (Number(task.focusMinutes) || 0) - removed.minutes),
+          lastFocusedAt: remainingForTask.reduce((latest, session) => Math.max(latest, Number(session.timestamp) || Number(session.startedAt) || 0), 0) || null,
+        };
+      });
+    }
+
+    if (source.dailyData && typeof source.dailyData === 'object' && source.dailyData.date) {
+      const date = source.dailyData.date;
+      if (clearAll || removedSessions.some(session => session && session.date === date)) {
+        source.dailyData = {
+          ...source.dailyData,
+          minutes: remainingSessions
+            .filter(session => session && session.date === date && (session.type || 'work') === 'work')
+            .reduce((sum, session) => sum + Math.max(0, Number(session.duration) || 0), 0),
+        };
+      }
+    }
+
+    if (source.focusActivity && typeof source.focusActivity === 'object' && !Array.isArray(source.focusActivity)) {
+      const affectedDates = new Set(clearAll
+        ? Object.keys(source.focusActivity)
+        : removedSessions.map(session => session && session.date).filter(Boolean));
+      affectedDates.forEach(date => {
+        if (!source.focusActivity[date]) return;
+        const records = remainingSessions.filter(session => session && session.date === date && (session.type || 'work') === 'work');
+        const next = { ...source.focusActivity[date] };
+        if (Object.prototype.hasOwnProperty.call(next, 'sessions')) next.sessions = records.length;
+        if (Object.prototype.hasOwnProperty.call(next, 'minutes')) next.minutes = records.reduce((sum, session) => sum + Math.max(0, Number(session.duration) || 0), 0);
+        source.focusActivity[date] = next;
+      });
+    }
+
+    return {
+      appData: source,
+      removedSessions,
+      removedSessionReviewCount: sessionReviews.length - source.sessionReviews.length,
+    };
+  }
+
   return {
     SNAPSHOT_SCHEMA_VERSION,
     SNAPSHOT_KIND,
@@ -258,6 +352,7 @@
     sha256Hex,
     recordIdentity,
     recordDate,
-    cleanArchivedHistory
+    cleanArchivedHistory,
+    removeSessionRecords
   };
 });

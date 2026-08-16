@@ -114,6 +114,11 @@ test('local config is loopback-only and reports the actual ephemeral port', asyn
   const config = await response.json();
   assert.equal(config.port, local.service.port);
   assert.equal(config.token, local.service.store.token);
+  assert.equal(response.headers.get('access-control-allow-origin'), null);
+
+  const nullOrigin = await fetch(`${local.baseUrl}/api/v1/local-config`, { headers: { Origin: 'null' } });
+  assert.equal(nullOrigin.status, 200);
+  assert.equal(nullOrigin.headers.get('access-control-allow-origin'), null);
 
   const remote = await fixture({ remoteAddressResolver: () => '192.168.1.20' });
   t.after(() => remote.close());
@@ -123,7 +128,10 @@ test('local config is loopback-only and reports the actual ephemeral port', asyn
 test('static server blocks traversal and non-app files while serving the PWA shell', async t => {
   const f = await fixture();
   t.after(() => f.close());
-  assert.equal((await fetch(`${f.baseUrl}/index.html`)).status, 200);
+  const index = await fetch(`${f.baseUrl}/index.html`);
+  assert.equal(index.status, 200);
+  assert.match(index.headers.get('content-security-policy'), /script-src 'self'/);
+  assert.equal(index.headers.get('x-frame-options'), 'DENY');
   assert.equal((await fetch(`${f.baseUrl}/package.json`)).status, 404);
   assert.equal((await fetch(`${f.baseUrl}/server/archive-server.js`)).status, 404);
   const traversal = await fetch(`${f.baseUrl}/%252e%252e/package.json`);

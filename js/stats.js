@@ -410,7 +410,7 @@ const Stats = {
         : `${session.date || '未知日期'}`;
       const duration = Number(session.duration) || 0;
       return `<div class="history-row">
-        <div><strong>${this.escape(session.sessionName || session.subjectName || (session.type === 'work' ? '专注' : '休息'))}</strong><span>${date}${session.subjectName ? ` · ${this.escape(session.subjectName)}` : ''}</span></div>
+        <div><strong>${this.escape(session.sessionName || session.subjectName || (session.type === 'work' ? '专注' : '休息'))}</strong><span>${this.escape(date)}${session.subjectName ? ` · ${this.escape(session.subjectName)}` : ''}</span></div>
         <div class="history-duration">${duration} 分钟 <button class="history-delete" type="button" data-index="${session._index}" title="删除这条记录" aria-label="删除这条记录">×</button></div>
       </div>`;
     }).join('');
@@ -423,32 +423,57 @@ const Stats = {
   deleteSession(index) {
     const sessions = this.getSessions();
     if (index < 0 || index >= sessions.length) return;
-    sessions.splice(index, 1);
-    SafeStore.set('focusSessions', JSON.stringify(sessions));
+    const session = sessions[index];
+    if (!window.confirm(`删除「${session.sessionName || '这条专注'}」的 ${Number(session.duration) || 0} 分钟记录？关联的单次复盘也会删除。`)) return;
+    if (!session.id) {
+      session.id = `legacy-session-${Date.now().toString(36)}-${index}`;
+      SafeStore.set('focusSessions', JSON.stringify(sessions));
+    }
+    this.removeSessionData([session.id], false);
+  },
+
+  clearHistory() {
+    const sessions = this.getSessions();
+    const hasRelatedData = sessions.length
+      || (() => { try { return JSON.parse(SafeStore.get('sessionReviews', '[]')).length > 0; } catch (error) { return false; } })()
+      || (() => { try { return JSON.parse(SafeStore.get('dailyCloseEntries', '[]')).some(entry => entry?.sessionsSnapshot?.length || entry?.sessionReviewsSnapshot?.length); } catch (error) { return false; } })();
+    if (!hasRelatedData) return;
+    if (!window.confirm('确定清空全部专注记录吗？关联的单次复盘、日终番茄快照和任务番茄计数也会同步清理，此操作不可撤销。')) return;
+    this.removeSessionData([], true);
+  },
+
+  removeSessionData(sessionIds, clearAll) {
+    if (typeof VsrArchiveCore === 'undefined' || !VsrArchiveCore.removeSessionRecords) return;
+    const read = (key, fallback) => {
+      try { return JSON.parse(SafeStore.get(key, JSON.stringify(fallback))); } catch (error) { return fallback; }
+    };
+    const result = VsrArchiveCore.removeSessionRecords({
+      focusSessions: this.getSessions(),
+      sessionReviews: read('sessionReviews', []),
+      dailyCloseEntries: read('dailyCloseEntries', []),
+      dailyData: read('dailyData', null),
+      focusActivity: read('focusActivity', {}),
+      tasks: read('tasks', []),
+    }, sessionIds, { clearAll });
+    ['focusSessions', 'sessionReviews', 'dailyCloseEntries', 'dailyData', 'focusActivity', 'tasks'].forEach(key => {
+      if (result.appData[key] === undefined || result.appData[key] === null) SafeStore.remove(key);
+      else SafeStore.set(key, JSON.stringify(result.appData[key]));
+    });
+    if (typeof ReviewManager !== 'undefined') {
+      ReviewManager.sessionReviews = result.appData.sessionReviews || [];
+      ReviewManager.dailyCloses = result.appData.dailyCloseEntries || [];
+      ReviewManager.refreshOpenReviewCenter?.();
+    }
+    if (typeof TaskManager !== 'undefined') {
+      TaskManager.tasks = (result.appData.tasks || []).map(task => TaskManager.normalizeTask(task));
+      TaskManager.render();
+    }
     this.refresh();
     if (typeof PomodoroTimer !== 'undefined') PomodoroTimer.loadTodayData();
     if (typeof App !== 'undefined') {
       App.updateStreakAndTotal();
       App.checkAchievements();
-      App.showToast('已删除一条专注记录');
-    }
-  },
-
-  clearHistory() {
-    const sessions = this.getSessions();
-    if (!sessions.length) return;
-    if (!window.confirm('确定清空全部专注记录吗？此操作不可撤销。')) return;
-    localStorage.removeItem('focusSessions');
-    localStorage.removeItem('dailyData');
-    localStorage.removeItem('focusActivity');
-    this.refresh();
-    if (typeof PomodoroTimer !== 'undefined') {
-      PomodoroTimer.todayMinutes = 0;
-      PomodoroTimer.updateTodayDisplay();
-    }
-    if (typeof App !== 'undefined') {
-      App.updateStreakAndTotal();
-      App.showToast('专注记录已清空');
+      App.showToast(clearAll ? '专注记录及关联复盘已清空' : '专注记录及关联复盘已删除');
     }
   },
 
@@ -480,7 +505,7 @@ const Stats = {
       : Object.fromEntries(Object.entries(deepseekSettings || {}).filter(([key]) => !/(?:api[-_]?key|token|authorization|password|secret|credential)/i.test(key)));
     const dayClosePromptedDate = localStorage.getItem('dayClosePromptedDate') || '';
     const data = {
-      schemaVersion: 2,
+      schemaVersion: typeof VsrArchiveCore !== 'undefined' ? VsrArchiveCore.SNAPSHOT_SCHEMA_VERSION : 3,
       focusSessions: this.getSessions(),
       focusActivity,
       studyPlans,

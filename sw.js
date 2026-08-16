@@ -1,13 +1,13 @@
-const CACHE = 'virtual-study-room-v13';
+const CACHE = 'virtual-study-room-v15';
 const APP_SHELL = [
   './', './index.html', './css/style.css?v=20260816-3', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
   './vendor/chart.umd.min.js', './vendor/xlsx.full.min.js',
-  './shared/archive-core.js', './js/storage.js', './js/background.js',
+  './shared/archive-core.js?v=20260816-5', './js/storage.js', './js/background.js',
   './js/timer.js', './js/templates.js', './js/courses.js',
-  './js/tasks.js?v=20260816-3', './js/plans.js',
-  './js/import-hub.js', './js/sync.js', './js/reviews.js?v=20260816-3', './js/stats.js',
-  './js/goals.js', './js/app.js'
+  './js/tasks.js?v=20260816-3', './js/plans.js?v=20260816-5',
+  './js/import-hub.js', './js/sync.js?v=20260816-5', './js/reviews.js?v=20260816-5', './js/stats.js?v=20260816-5',
+  './js/goals.js?v=20260816-5', './js/app.js?v=20260816-5'
 ];
 
 self.addEventListener('install', event => {

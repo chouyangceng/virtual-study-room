@@ -390,13 +390,17 @@ const ReviewManager = {
       : '今天还没有专注或完成任务，记录会在这里自动汇总。';
 
     const list = document.getElementById('review-list');
-    const groupedTaskIds = new Set([...tasks.map(task => task.id), ...sessions.map(session => session.taskId).filter(Boolean)]);
+    const groupedTaskIds = new Set([
+      ...tasks.map(task => task.id),
+      ...sessions.map(session => session.taskId).filter(Boolean),
+      ...reviews.map(review => review.taskId).filter(Boolean),
+    ]);
     const rows = [...groupedTaskIds].map(taskId => {
+      const taskReview = reviews.find(review => review.taskId === taskId);
       const task = (typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(taskId) : null)
         || tasks.find(item => item.id === taskId)
-        || { id: taskId, text: sessions.find(item => item.taskId === taskId)?.sessionName || '未命名任务', completed: false };
+        || { id: taskId, text: taskReview?.taskTitle || sessions.find(item => item.taskId === taskId)?.sessionName || '未命名任务', completed: Boolean(taskReview) };
       const taskSessions = sessions.filter(session => session.taskId === taskId);
-      const taskReview = reviews.find(review => review.taskId === taskId);
       const sessionRows = taskSessions.map((session, index) => {
         const review = sessionReviews.find(item => item.sessionId === session.id);
         const content = this.sessionReviewContent(review);
@@ -408,13 +412,16 @@ const ReviewManager = {
       return `<article class="review-row" data-task-id="${this.escape(task.id)}" data-review-id="${this.escape(taskReview?.id || '')}"><div class="review-row-title"><strong>${this.escape(task.text)}</strong><span>${task.completed ? '任务已完成' : '专注进行中'}</span></div><div class="review-row-meta"><span>${taskSessions.length} 个番茄</span><span>${taskSessions.reduce((sum, item) => sum + (Number(item.duration) || 0), 0)} 分钟</span></div><div class="session-review-list">${sessionRows}</div>${taskReviewBlock}</article>`;
     }).join('');
     list.innerHTML = rows || '<div class="review-empty">完成一次专注后，这里会按任务整合番茄记录。</div>';
-    this.bindDailyReviewActions(list, tasks, sessions);
+    this.bindDailyReviewActions(list, tasks, sessions, reviews);
   },
 
-  bindDailyReviewActions(list, tasks, sessions) {
+  bindDailyReviewActions(list, tasks, sessions, reviews) {
     list.querySelectorAll('.review-fill, .review-edit').forEach(button => button.addEventListener('click', event => {
       const id = event.currentTarget.closest('.review-row').dataset.taskId;
-      const task = tasks.find(item => item.id === id) || (typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(id) : null);
+      const review = reviews.find(item => item.taskId === id);
+      const task = tasks.find(item => item.id === id)
+        || (typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(id) : null)
+        || (review ? { id, text: review.taskTitle || '未命名任务', completed: true } : null);
       if (task) this.openForTask(task);
     }));
     list.querySelectorAll('.review-delete').forEach(button => button.addEventListener('click', event => this.deleteReview(event.currentTarget.closest('.review-row').dataset.reviewId)));

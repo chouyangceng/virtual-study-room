@@ -99,7 +99,7 @@ const GoalManager = {
     list.innerHTML = this.goals.map(goal => {
       const status = this.getGoalStatus(goal);
       const active = goal.id === this.currentId ? 'active' : '';
-      return `<button class="goal-item ${active}" type="button" data-id="${goal.id}">
+      return `<button class="goal-item ${active}" type="button" data-id="${this.escape(goal.id)}">
         <span>${this.escape(goal.name)}</span>
         <strong>${this.escape(status.title)}</strong>
         <small>${this.escape(status.meta)}</small>

@@ -1,6 +1,6 @@
 # 虚拟自习室 Agent Handoff
 
-当前版本：1.2.0（Windows 优先，Mac 尚未同步）。
+当前版本：1.2.1（Windows 轻量版优先；Mac Electron 配置保留，正式无警告安装仍需 Apple 签名与公证）。
 
 当前 Windows 发布形式为轻量版：`E:\虚拟自习室\轻量版\虚拟自习室.exe`。它复用系统 Edge 和 Node，不再使用 Electron 大包。桌面快捷方式已指向该启动器。
 
@@ -30,7 +30,7 @@ npm run build:single
 npm run dist:win
 ```
 
-不要在本轮构建或安装 Mac 版本。
+Windows 无法完成 Apple notarization。Mac 正式包应在 macOS 构建机配置 Developer ID 与公证凭据后生成。
 
 ## Windows 轻量版维护
 
@@ -66,4 +66,6 @@ npm run dist:win
 - 真实 1 分钟番茄钟完成、单次复盘、自动休息、任务完成复盘、日终自动汇总、明日提醒和未来日历待办均通过。
 - 375px 复盘日历无横向溢出，浏览器控制台无应用错误。
 - 历史日历详情支持修改既往单次复盘和任务复盘，编辑结果会同步到对应日终快照。
-- 当前部署业务文件约 1.72MB，启动器约 79KB；Service Worker 缓存已升级为 `virtual-study-room-v12`，复盘脚本与样式带 `v=20260816-2` 缓存标识。
+- 1.2.1 严格审计后 Service Worker 缓存升级为 `virtual-study-room-v15`，关键业务脚本使用 `v=20260816-5` 缓存标识。
+- 删除专注记录会级联复盘、日终快照、任务番茄计数和分钟统计，自动化测试增至 14 项。
+- npm 依赖审计为 0 漏洞；Electron 43.4.0、electron-builder 26.15.3。

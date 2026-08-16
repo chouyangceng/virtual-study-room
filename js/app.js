@@ -8,6 +8,7 @@ const App = {
   achievements: [],
   studyDayKey: '',
   dayRefreshTimer: null,
+  modalFocus: new WeakMap(),
 
   // Achievement definitions
   achievementDefs: [
@@ -31,8 +32,12 @@ const App = {
   ],
 
   init() {
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
     this.loadState();
     this.bindUI();
+    this.initModalAccessibility();
     this.applyTheme();
 
     // Initialize all modules
@@ -102,6 +107,23 @@ const App = {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+      const activeModals = [...document.querySelectorAll('.modal.active')];
+      const activeModal = activeModals[activeModals.length - 1];
+      if ((e.key === 'Escape' || e.code === 'Escape') && activeModal) {
+        e.preventDefault();
+        activeModal.querySelector('.modal-close')?.click();
+        return;
+      }
+      if ((e.key === 'Tab' || e.code === 'Tab') && activeModal) {
+        const focusable = [...activeModal.querySelectorAll('button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+          .filter(element => element.getClientRects().length > 0);
+        if (focusable.length) {
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return;
       if (e.code === 'Space') {
@@ -124,6 +146,25 @@ const App = {
       }
       if (e.code === 'Escape') closeMoreMenu();
     });
+  },
+
+  initModalAccessibility() {
+    const observer = new MutationObserver(records => records.forEach(record => {
+      const modal = record.target;
+      if (modal.classList.contains('active')) {
+        this.modalFocus.set(modal, document.activeElement);
+        requestAnimationFrame(() => {
+          if (modal.classList.contains('active') && !modal.contains(document.activeElement)) {
+            modal.querySelector('.modal-close, button, input, select, textarea, [tabindex]:not([tabindex="-1"])')?.focus();
+          }
+        });
+      } else {
+        const previous = this.modalFocus.get(modal);
+        this.modalFocus.delete(modal);
+        if (previous?.isConnected) requestAnimationFrame(() => previous.focus());
+      }
+    }));
+    document.querySelectorAll('.modal').forEach(modal => observer.observe(modal, { attributes: true, attributeFilter: ['class'] }));
   },
 
   getStudyDateKey(date = new Date()) {

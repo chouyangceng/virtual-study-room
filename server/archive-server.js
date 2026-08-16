@@ -95,6 +95,18 @@ function contentType(filePath) {
   }[extension] || 'application/octet-stream';
 }
 
+function staticSecurityHeaders(filePath) {
+  const headers = {
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'DENY'
+  };
+  if (path.extname(filePath).toLowerCase() === '.html') {
+    headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com data: blob:; connect-src 'self' http: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; worker-src 'self'";
+  }
+  return headers;
+}
+
 function hasTraversalAttempt(rawUrl) {
   let value = String(rawUrl || '').split('?')[0];
   for (let index = 0; index < 3; index += 1) {
@@ -130,11 +142,10 @@ async function serveStatic(request, response, staticRoot, pathname) {
   let stat;
   try { stat = await fs.promises.stat(filePath); } catch (error) { sendJson(response, 404, { error: '未找到资源' }); return; }
   if (!stat.isFile()) { sendJson(response, 404, { error: '未找到资源' }); return; }
-  response.writeHead(200, {
+  response.writeHead(200, Object.assign({
     'Content-Type': contentType(filePath),
-    'Content-Length': stat.size,
-    'X-Content-Type-Options': 'nosniff'
-  });
+    'Content-Length': stat.size
+  }, staticSecurityHeaders(filePath)));
   if (request.method === 'HEAD') { response.end(); return; }
   fs.createReadStream(filePath).pipe(response);
 }
@@ -170,7 +181,9 @@ async function createArchiveServer(options) {
       }
       if (pathname === '/api/v1/local-config' && request.method === 'GET') {
         if (!isLoopback(remoteAddressResolver(request))) { sendJson(response, 403, { error: '仅允许本机回环访问' }, cors); return; }
-        sendJson(response, 200, { port: boundPort, dataDirectory, token: store.token, serviceUrls: serviceUrls(boundPort) }, cors);
+        // Never grant cross-origin read access to the endpoint that reveals the bearer token.
+        // The Windows UI is same-origin and does not need CORS for this request.
+        sendJson(response, 200, { port: boundPort, dataDirectory, token: store.token, serviceUrls: serviceUrls(boundPort) });
         return;
       }
       if (pathname.startsWith('/api/v1/')) {
@@ -229,4 +242,4 @@ async function createArchiveServer(options) {
   };
 }
 
-module.exports = { createArchiveServer, isLoopback, serviceUrls, hasTraversalAttempt, isAllowedStaticPath, DEFAULT_PORT, DEFAULT_MAX_BODY_BYTES };
+module.exports = { createArchiveServer, isLoopback, serviceUrls, hasTraversalAttempt, isAllowedStaticPath, staticSecurityHeaders, DEFAULT_PORT, DEFAULT_MAX_BODY_BYTES };

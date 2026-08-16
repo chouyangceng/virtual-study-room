@@ -109,3 +109,42 @@ test('SHA-256 fallback matches the platform implementation', () => {
     assert.equal(Core.sha256Hex(value), expected);
   }
 });
+
+test('deleting a session reconciles reviews, day-close snapshots, daily totals and task counters', () => {
+  const session = { id: 'session-1', taskId: 'task-1', date: '2026-08-16', duration: 25, timestamp: 100 };
+  const kept = { id: 'session-2', taskId: 'task-1', date: '2026-08-16', duration: 10, timestamp: 200 };
+  const result = Core.removeSessionRecords({
+    focusSessions: [session, kept],
+    sessionReviews: [{ id: 'review-1', sessionId: 'session-1' }, { id: 'review-2', sessionId: 'session-2' }],
+    dailyCloseEntries: [{
+      date: '2026-08-16', focusMinutes: 35,
+      sessionsSnapshot: [session, kept],
+      sessionReviewsSnapshot: [{ sessionId: 'session-1' }, { sessionId: 'session-2' }]
+    }],
+    dailyData: { date: '2026-08-16', minutes: 35 },
+    tasks: [{ id: 'task-1', completedPomodoros: 2, focusMinutes: 35, lastFocusedAt: 200 }],
+    focusActivity: { '2026-08-16': { attempts: 2, interruptions: 0, sessions: 2, minutes: 35 } }
+  }, ['session-1']);
+  assert.deepEqual(result.appData.focusSessions, [kept]);
+  assert.deepEqual(result.appData.sessionReviews.map(item => item.id), ['review-2']);
+  assert.deepEqual(result.appData.dailyCloseEntries[0].sessionsSnapshot, [kept]);
+  assert.equal(result.appData.dailyCloseEntries[0].focusMinutes, 10);
+  assert.equal(result.appData.dailyData.minutes, 10);
+  assert.equal(result.appData.tasks[0].completedPomodoros, 1);
+  assert.equal(result.appData.tasks[0].focusMinutes, 10);
+  assert.equal(result.appData.tasks[0].lastFocusedAt, 200);
+  assert.equal(result.appData.focusActivity['2026-08-16'].sessions, 1);
+  assert.equal(result.appData.focusActivity['2026-08-16'].minutes, 10);
+});
+
+test('clearing sessions also removes orphan reviews and historical session snapshots', () => {
+  const result = Core.removeSessionRecords({
+    focusSessions: [],
+    sessionReviews: [{ id: 'orphan', sessionId: 'missing' }],
+    dailyCloseEntries: [{ date: '2026-08-15', focusMinutes: 25, sessionsSnapshot: [{ id: 'old', duration: 25 }], sessionReviewsSnapshot: [{ sessionId: 'old' }] }]
+  }, [], { clearAll: true });
+  assert.deepEqual(result.appData.sessionReviews, []);
+  assert.deepEqual(result.appData.dailyCloseEntries[0].sessionsSnapshot, []);
+  assert.deepEqual(result.appData.dailyCloseEntries[0].sessionReviewsSnapshot, []);
+  assert.equal(result.appData.dailyCloseEntries[0].focusMinutes, 0);
+});

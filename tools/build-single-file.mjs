@@ -21,8 +21,6 @@ const inline = (src) => {
 
 html = html.replace(/<script src="([^"]+)"><\/script>/g, (_, src) => inline(src));
 
-// Service worker registration is skipped in the single-file build (file:// and localhost).
-html = html.replace(/<script>if \('serviceWorker'.*?<\/script>/s, '');
 html = html.replace(/^[\t ]+$/gm, '');
 
 fs.writeFileSync(outPath, html);

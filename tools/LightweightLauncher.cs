@@ -79,8 +79,12 @@ internal static class LightweightLauncher
             request.ReadWriteTimeout = 350;
             request.Proxy = null;
             using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            using (StreamReader reader = new StreamReader(response.GetResponseStream()))
             {
-                return response.StatusCode == HttpStatusCode.OK;
+                string body = reader.ReadToEnd();
+                return response.StatusCode == HttpStatusCode.OK
+                    && body.IndexOf("\"service\":\"virtual-study-room-archive\"", StringComparison.Ordinal) >= 0
+                    && body.IndexOf("\"apiVersion\":1", StringComparison.Ordinal) >= 0;
             }
         }
         catch { return false; }
