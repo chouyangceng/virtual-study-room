@@ -1,6 +1,6 @@
 const SyncManager = {
   latestSchemaVersion: 2,
-  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'subjects', 'courses', 'studyGoals', 'dailyReviews', 'dailyCloseEntries', 'appSettings', 'audioSettings', 'deepseekSettings', 'currentSubjectId', 'currentStudyGoal', 'dayClosePromptedDate'],
+  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
   settingsKey: 'syncSettings',
   stateKey: 'syncState',
   inFlight: null,
@@ -298,13 +298,14 @@ const SyncManager = {
       this.saveState({ lastCleanupDate: today, lastCleanupCount: 0 });
       return 0;
     }
-    ['focusSessions', 'dailyReviews', 'dailyCloseEntries', 'focusActivity'].forEach(key => {
+    ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'focusActivity'].forEach(key => {
       SafeStore.set(key, JSON.stringify(cleaned.appData[key] || (key === 'focusActivity' ? {} : [])));
     });
     if (cleaned.appData.dailyData === undefined) SafeStore.remove('dailyData');
     else SafeStore.set('dailyData', JSON.stringify(cleaned.appData.dailyData));
     if (typeof ReviewManager !== 'undefined') {
       ReviewManager.reviews = cleaned.appData.dailyReviews || [];
+      ReviewManager.sessionReviews = cleaned.appData.sessionReviews || [];
       ReviewManager.dailyCloses = cleaned.appData.dailyCloseEntries || [];
     }
     if (typeof Stats !== 'undefined') { Stats.needsRefresh = true; Stats.refresh?.(); }

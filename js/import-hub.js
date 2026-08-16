@@ -33,15 +33,18 @@ const ImportHub = {
     button.disabled = true;
     status.textContent = '正在导入…';
     try {
-      const jobs = [];
       const results = [];
-      if (document.getElementById('import-hub-plans').checked) results.push(PlanManager.readFile(this.file).then(count => { if (count) PlanManager.commitPending(); return count; }));
-      if (document.getElementById('import-hub-subjects').checked) results.push(SubjectManager.importFile(this.file));
-      if (document.getElementById('import-hub-courses').checked) results.push(CourseManager.importFile(this.file));
-      const counts = await Promise.all(results);
-      PlanManager.render(); SubjectManager.render(); CourseManager.render();
-      const labels = ['计划', '学科目标', '课表'];
-      const summary = counts.filter(count => typeof count === 'number').map((count, index) => `${labels[index]} ${count}`).join(' · ');
+      if (document.getElementById('import-hub-plans').checked) {
+        const parsed = await PlanManager.readFile(this.file);
+        const count = parsed ? PlanManager.commitPending() : 0;
+        results.push(`任务/计划 ${count}`);
+      }
+      if (document.getElementById('import-hub-courses').checked) {
+        const count = await CourseManager.importFile(this.file);
+        results.push(`课表 ${count}`);
+      }
+      PlanManager.render(); CourseManager.render();
+      const summary = results.join(' · ');
       status.textContent = `导入完成：${summary}`;
       if (typeof App !== 'undefined') App.showToast('📥 一键导入完成');
     } catch (error) {

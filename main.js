@@ -4,6 +4,7 @@ const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
 let archiveService = null;
+app.setName('虚拟自习室');
 
 function configuredDataRoot() {
   const argument = process.argv.find(value => String(value).startsWith('--vsr-data-root='));

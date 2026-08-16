@@ -28,7 +28,7 @@ const CourseManager = {
     modal.querySelector('.modal-backdrop').addEventListener('click', () => this.close());
     document.getElementById('btn-import-courses').addEventListener('click', () => document.getElementById('course-file-input').click());
     document.getElementById('course-file-input').addEventListener('change', event => { if (event.target.files[0]) this.importFile(event.target.files[0]); event.target.value = ''; });
-    document.getElementById('btn-download-course-template').addEventListener('click', () => TemplateManager.download('all'));
+    document.getElementById('btn-download-course-template').addEventListener('click', () => TemplateManager.download('courses'));
     document.getElementById('course-week').addEventListener('input', () => this.render());
     document.getElementById('btn-clear-courses').addEventListener('click', () => { this.courses = []; this.save(); this.render(); if (typeof App !== 'undefined') App.showToast('已清空课表'); });
   },

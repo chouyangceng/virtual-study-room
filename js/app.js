@@ -37,11 +37,9 @@ const App = {
 
     // Initialize all modules
     Background.init();
-    AudioEngine.init();
-    PomodoroTimer.init();
-    SubjectManager.init();
-    CourseManager.init();
     TaskManager.init();
+    PomodoroTimer.init();
+    CourseManager.init();
     PlanManager.init();
     ImportHub.init();
     SyncManager.init();
@@ -71,6 +69,24 @@ const App = {
   },
 
   bindUI() {
+    const moreButton = document.getElementById('btn-more');
+    const moreMenu = document.getElementById('topbar-menu');
+    const closeMoreMenu = () => {
+      moreMenu?.classList.add('hidden');
+      moreButton?.setAttribute('aria-expanded', 'false');
+    };
+    moreButton?.addEventListener('click', event => {
+      event.stopPropagation();
+      const willOpen = moreMenu?.classList.contains('hidden');
+      moreMenu?.classList.toggle('hidden', !willOpen);
+      moreButton.setAttribute('aria-expanded', String(Boolean(willOpen)));
+    });
+    moreMenu?.addEventListener('click', event => {
+      if (event.target.closest('button')) closeMoreMenu();
+    });
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.topbar-more')) closeMoreMenu();
+    });
     document.getElementById('btn-theme').addEventListener('click', () => this.toggleTheme());
     document.getElementById('btn-fullscreen').addEventListener('click', () => this.toggleFullscreen());
     document.getElementById('btn-panorama')?.addEventListener('click', () => this.togglePanorama());
@@ -106,12 +122,13 @@ const App = {
       if (e.code === 'Escape' && document.body.classList.contains('panorama-mode')) {
         this.exitPanorama();
       }
+      if (e.code === 'Escape') closeMoreMenu();
     });
   },
 
   getStudyDateKey(date = new Date()) {
     const d = new Date(date);
-    if (d.getHours() < 7) d.setDate(d.getDate() - 1);
+    if (d.getHours() < 8) d.setDate(d.getDate() - 1);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   },
 
@@ -133,7 +150,7 @@ const App = {
       if (key !== this.studyDayKey) {
         this.studyDayKey = key;
         this.refreshDailyState();
-        this.showToast('新的一天开始了，固定每日任务已刷新');
+        this.showToast('早上 8 点已刷新，每日坚持可以重新打卡了');
       }
     }, 60000);
   },
@@ -187,7 +204,7 @@ const App = {
   toggleTheme() {
     this.theme = this.theme === 'light' ? 'dark' : 'light';
     document.body.setAttribute('data-theme', this.theme);
-    document.getElementById('btn-theme').textContent = this.theme === 'dark' ? '☀️' : '🌓';
+    this.updateThemeButton();
 
     // Re-render charts if stats modal is open
     if (document.getElementById('stats-modal').classList.contains('active')) {
@@ -199,7 +216,15 @@ const App = {
 
   applyTheme() {
     document.body.setAttribute('data-theme', this.theme);
-    document.getElementById('btn-theme').textContent = this.theme === 'dark' ? '☀️' : '🌓';
+    this.updateThemeButton();
+  },
+
+  updateThemeButton() {
+    const button = document.getElementById('btn-theme');
+    if (!button) return;
+    const label = this.theme === 'dark' ? '切换到浅色主题' : '切换到深色主题';
+    button.title = label;
+    button.setAttribute('aria-label', label);
   },
 
   toggleFullscreen() {

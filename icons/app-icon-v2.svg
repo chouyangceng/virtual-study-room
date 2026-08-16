@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="84" y1="52" x2="430" y2="462" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5B8DEF"/>
+      <stop offset="1" stop-color="#2858B8"/>
+    </linearGradient>
+    <linearGradient id="page" x1="148" y1="184" x2="364" y2="382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EAF1FF"/>
+    </linearGradient>
+    <filter id="shadow" x="70" y="80" width="372" height="370" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#163675" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="116" fill="url(#bg)"/>
+  <circle cx="256" cy="136" r="38" fill="#FFD36A"/>
+  <path d="M256 80V58M203 95l-16-18M309 95l16-18M329 136h25M158 136h25" fill="none" stroke="#FFE8A9" stroke-width="16" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="M104 180c49-16 99-4 152 37v190c-52-36-103-49-152-30V180Z" fill="url(#page)"/>
+    <path d="M408 180c-49-16-99-4-152 37v190c52-36 103-49 152-30V180Z" fill="url(#page)"/>
+    <path d="M256 217v190" stroke="#C9D9F7" stroke-width="12" stroke-linecap="round"/>
+    <path d="M136 232c33-6 62 3 88 22M136 280c33-6 62 3 88 22M136 328c33-6 62 3 88 22M376 232c-33-6-62 3-88 22M376 280c-33-6-62 3-88 22M376 328c-33-6-62 3-88 22" fill="none" stroke="#AEC4EC" stroke-width="13" stroke-linecap="round"/>
+  </g>
+</svg>

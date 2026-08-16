@@ -26,7 +26,9 @@ const PomodoroTimer = {
   endAt: null,
   currentSessionName: '',
   currentSessionDetail: '',
-  currentSessionSubjectId: '',
+  currentSessionNote: '',
+  currentTaskId: '',
+  chimeContext: null,
 
   init() {
     this.loadSettings();
@@ -43,14 +45,11 @@ const PomodoroTimer = {
   bindUI() {
     document.getElementById('btn-start-pause').addEventListener('click', () => this.toggle());
     document.getElementById('btn-reset').addEventListener('click', () => this.reset());
-    document.getElementById('session-task-input')?.addEventListener('keydown', event => {
-      if (event.key === 'Enter' && !this.isRunning) this.toggle();
+    document.getElementById('session-task-select')?.addEventListener('change', event => {
+      this.currentTaskId = event.target.value;
     });
-    document.getElementById('session-subject-select')?.addEventListener('change', event => {
-      if (typeof SubjectManager !== 'undefined') {
-        SubjectManager.currentSubjectId = event.target.value;
-        SafeStore.set('currentSubjectId', event.target.value);
-      }
+    document.getElementById('session-note')?.addEventListener('input', event => {
+      this.currentSessionNote = event.target.value.trim();
     });
 
     document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -141,20 +140,20 @@ const PomodoroTimer = {
   },
 
   start() {
-    if (AudioEngine.ctx && AudioEngine.ctx.state === 'suspended') AudioEngine.ctx.resume();
+    this.requestNotificationPermission();
     if (this.isWork && !this.currentSessionName) {
-      const input = document.getElementById('session-task-input');
-      const typed = input?.value.trim() || '';
-      const confirmed = typed || window.prompt('确认本次专注的小任务名称：', '')?.trim();
-      if (!confirmed) {
-        if (typeof App !== 'undefined') App.showToast('请先填写这次要完成的小任务');
-        input?.focus();
+      const select = document.getElementById('session-task-select');
+      const taskId = select?.value || this.currentTaskId;
+      const task = typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(taskId) : null;
+      if (!task || task.completed) {
+        if (typeof App !== 'undefined') App.showToast('请先从今日任务中选择一项未完成任务');
+        select?.focus();
         return;
       }
-      this.currentSessionName = confirmed;
-      this.currentSessionDetail = typed ? typed : confirmed;
-      this.currentSessionSubjectId = document.getElementById('session-subject-select')?.value || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
-      if (input) input.value = confirmed;
+      this.currentTaskId = task.id;
+      this.currentSessionName = task.text;
+      this.currentSessionDetail = task.categoryPath || task.text;
+      this.currentSessionNote = document.getElementById('session-note')?.value.trim() || '';
     }
     this.isRunning = true;
     if (!this.currentSessionStart) {
@@ -198,7 +197,9 @@ const PomodoroTimer = {
     this.activeSeconds = 0;
     this.currentSessionName = '';
     this.currentSessionDetail = '';
-    this.currentSessionSubjectId = '';
+    this.currentSessionNote = '';
+    if (document.getElementById('session-note')) document.getElementById('session-note').value = '';
+    this.currentTaskId = document.getElementById('session-task-select')?.value || '';
     this.lastTickAt = null;
     this.endAt = null;
     this.remaining = this.isWork ? this.workDuration : this.breakDuration;
@@ -244,10 +245,13 @@ const PomodoroTimer = {
     if (this.isWork) {
       // Record the completed session
       const durationMinutes = Math.max(1, Math.round(this.activeSeconds / 60));
-      this.recordSession(durationMinutes, this.currentSessionStart);
+      const completedSession = this.recordSession(durationMinutes, this.currentSessionStart);
+      if (typeof TaskManager !== 'undefined') TaskManager.recordPomodoro(this.currentTaskId, durationMinutes);
+      this.notify('专注完成', `${this.currentSessionName || '本次任务'}已完成一个番茄钟，休息一下吧。`);
       this.currentSessionName = '';
       this.currentSessionDetail = '';
-      this.currentSessionSubjectId = '';
+      this.currentSessionNote = '';
+      if (document.getElementById('session-note')) document.getElementById('session-note').value = '';
       this.sessionCount++;
 
       // Determine next break type
@@ -261,24 +265,18 @@ const PomodoroTimer = {
       document.getElementById('timer-status-badge').classList.add('break');
       document.getElementById('btn-start-pause').classList.add('break-mode');
       document.getElementById('btn-start-pause').textContent = '开始休息';
-      const sessionInput = document.getElementById('session-task-input');
-      if (sessionInput) sessionInput.value = '';
-
       // Update session dots
       this.updateDots();
 
       // Show toast
       if (typeof App !== 'undefined') App.showToast('🎉 专注完成！休息一下吧~');
 
-      // Auto-start break after short delay
-      const generationAtComplete = this.generation;
-      this.breakAutoTimer = setTimeout(() => {
-        this.breakAutoTimer = null;
-        if (generationAtComplete !== this.generation) return;
-        if (!this.isRunning && !this.isWork) {
-          this.start();
-        }
-      }, 1500);
+      // Review is optional, but the break waits until the user saves or skips it.
+      if (completedSession && typeof ReviewManager !== 'undefined' && ReviewManager.openForSession) {
+        ReviewManager.openForSession(completedSession, () => this.scheduleBreakAutoStart());
+      } else {
+        this.scheduleBreakAutoStart();
+      }
     } else {
       // Break complete
       this.isWork = true;
@@ -292,6 +290,7 @@ const PomodoroTimer = {
       document.getElementById('btn-start-pause').textContent = '开始专注';
 
       if (typeof App !== 'undefined') App.showToast('⏰ 休息结束，开始新的专注！');
+      this.notify('休息结束', '可以开始下一个专注时段了。');
     }
 
     this.currentSessionStart = null;
@@ -302,10 +301,22 @@ const PomodoroTimer = {
     this.saveSettings();
   },
 
+  scheduleBreakAutoStart() {
+    const generationAtComplete = this.generation;
+    if (this.breakAutoTimer) clearTimeout(this.breakAutoTimer);
+    this.breakAutoTimer = setTimeout(() => {
+      this.breakAutoTimer = null;
+      if (generationAtComplete !== this.generation) return;
+      if (!this.isRunning && !this.isWork) this.start();
+    }, 1500);
+  },
+
   playChime() {
     try {
-      const ctx = AudioEngine.ctx;
-      if (!ctx) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = this.chimeContext || (this.chimeContext = new AudioContextClass());
+      if (ctx.state === 'suspended') ctx.resume();
       const now = ctx.currentTime;
       const notes = this.isWork ? [523, 659, 784] : [784, 659, 523]; // C5 E5 G5 or reverse
       notes.forEach((freq, i) => {
@@ -316,11 +327,29 @@ const PomodoroTimer = {
         g.gain.setValueAtTime(0.15, now + i * 0.15);
         g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
         osc.connect(g);
-        g.connect(AudioEngine.masterGain || ctx.destination);
+        g.connect(ctx.destination);
         osc.start(now + i * 0.15);
         osc.stop(now + i * 0.15 + 0.4);
       });
     } catch(e) {}
+  },
+
+  requestNotificationPermission() {
+    if (!('Notification' in window) || Notification.permission !== 'default') return;
+    Notification.requestPermission().catch(() => {});
+  },
+
+  notify(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      new Notification(title, {
+        body,
+        icon: 'icons/icon-192.png',
+        silent: false,
+        vibrate: [],
+        tag: 'virtual-study-room-timer',
+      });
+    } catch (error) { /* system notifications are best effort */ }
   },
 
   recordSession(durationMinutes, startedAt = null) {
@@ -343,8 +372,8 @@ const PomodoroTimer = {
       sessions = sessions.slice(-4000);
       if (typeof App !== 'undefined') App.showToast('⚠️ 专注记录已达上限，最早的记录已自动清理。请定期导出备份。');
     }
-    const subjectId = this.currentSessionSubjectId || (typeof SubjectManager !== 'undefined' ? SubjectManager.currentSubjectId : '');
-    sessions.push({
+    const task = typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(this.currentTaskId) : null;
+    const session = {
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
       date: today,
       duration: actualDuration,
@@ -353,9 +382,11 @@ const PomodoroTimer = {
       startedAt: startedAt || Date.now(),
       sessionName: this.currentSessionName || '未命名专注',
       sessionDetail: this.currentSessionDetail || this.currentSessionName || '',
-      subjectId,
-      subjectName: subjectId && typeof SubjectManager !== 'undefined' ? SubjectManager.getName(subjectId) : '未分类',
-    });
+      sessionNote: this.currentSessionNote || '',
+      taskId: this.currentTaskId || '',
+      categoryPath: task?.categoryPath || '',
+    };
+    sessions.push(session);
     SafeStore.set('focusSessions', JSON.stringify(sessions));
 
     // Update stats
@@ -366,6 +397,7 @@ const PomodoroTimer = {
     }
 
     this.updateTodayDisplay();
+    return session;
   },
 
   recordActivity(field) {

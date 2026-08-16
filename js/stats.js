@@ -6,7 +6,7 @@
 const Stats = {
   weeklyChart: null,
   monthlyChart: null,
-  subjectChart: null,
+  categoryChart: null,
   needsRefresh: true,
 
   getTextColor() {
@@ -50,7 +50,7 @@ const Stats = {
     this.updateSummaryCards(sessions);
     this.renderWeeklyChart(sessions);
     this.renderMonthlyChart(sessions);
-    this.renderSubjectChart(sessions);
+    this.renderCategoryChart(sessions);
     this.renderHeatmap(sessions);
     this.renderHistory(sessions);
   },
@@ -281,16 +281,14 @@ const Stats = {
     });
   },
 
-  renderSubjectChart(sessions) {
-    if (this.subjectChart) this.subjectChart.destroy();
-    const canvas = document.getElementById('chart-subjects');
-    const empty = document.getElementById('chart-subjects-empty');
+  renderCategoryChart(sessions) {
+    if (this.categoryChart) this.categoryChart.destroy();
+    const canvas = document.getElementById('chart-categories');
+    const empty = document.getElementById('chart-categories-empty');
     if (!canvas || typeof Chart === 'undefined') return;
     const totals = {};
     sessions.forEach(session => {
-      const label = session.subjectName && session.subjectName !== '未分类'
-        ? session.subjectName
-        : (session.sessionName || session.subjectId || '未分类');
+      const label = session.categoryPath || (session.subjectName && session.subjectName !== '未分类' ? session.subjectName : '未分类');
       totals[label] = (totals[label] || 0) + (Number(session.duration) || 0);
     });
     const entries = Object.entries(totals).filter(([, minutes]) => minutes > 0).sort((a, b) => b[1] - a[1]);
@@ -302,7 +300,7 @@ const Stats = {
     canvas.classList.remove('hidden');
     empty?.classList.add('hidden');
     const colors = ['#2f66d0', '#2d9a7a', '#e29a45', '#8b6ed8', '#d45d6b', '#5b9bb5', '#7f8c99'];
-    this.subjectChart = new Chart(canvas.getContext('2d'), {
+    this.categoryChart = new Chart(canvas.getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: entries.map(([label]) => label),
@@ -459,25 +457,23 @@ const Stats = {
     let settings = {};
     let focusActivity = {};
     let studyPlans = [];
-    let subjects = [];
     let courses = [];
     let studyGoals = [];
     let dailyReviews = [];
+    let sessionReviews = [];
     let dailyCloseEntries = [];
     let appSettings = {};
-    let audioSettings = {};
     let deepseekSettings = {};
     try { tasks = JSON.parse(localStorage.getItem('tasks') || '[]'); } catch (e) {}
     try { settings = JSON.parse(localStorage.getItem('timerSettings') || '{}'); } catch (e) {}
     try { focusActivity = JSON.parse(localStorage.getItem('focusActivity') || '{}'); } catch (e) {}
     try { studyPlans = JSON.parse(localStorage.getItem('studyPlans') || '[]'); } catch (e) {}
-    try { subjects = JSON.parse(localStorage.getItem('subjects') || '[]'); } catch (e) {}
     try { courses = JSON.parse(localStorage.getItem('courses') || '[]'); } catch (e) {}
     try { studyGoals = JSON.parse(localStorage.getItem('studyGoals') || '[]'); } catch (e) {}
     try { dailyReviews = JSON.parse(localStorage.getItem('dailyReviews') || '[]'); } catch (e) {}
+    try { sessionReviews = JSON.parse(localStorage.getItem('sessionReviews') || '[]'); } catch (e) {}
     try { dailyCloseEntries = JSON.parse(localStorage.getItem('dailyCloseEntries') || '[]'); } catch (e) {}
     try { appSettings = JSON.parse(localStorage.getItem('appSettings') || '{}'); } catch (e) {}
-    try { audioSettings = JSON.parse(localStorage.getItem('audioSettings') || '{}'); } catch (e) {}
     try { deepseekSettings = JSON.parse(localStorage.getItem('deepseekSettings') || '{}'); } catch (e) {}
     const deepseekExport = typeof VsrArchiveCore !== 'undefined'
       ? VsrArchiveCore.sanitizeAppData({ deepseekSettings }).deepseekSettings
@@ -490,15 +486,13 @@ const Stats = {
       studyPlans,
       tasks,
       timerSettings: settings,
-      subjects,
       courses,
       studyGoals,
       dailyReviews,
+      sessionReviews,
       dailyCloseEntries,
       appSettings,
-      audioSettings,
       deepseekSettings: deepseekExport,
-      currentSubjectId: localStorage.getItem('currentSubjectId') || '',
       currentStudyGoal: localStorage.getItem('currentStudyGoal') || '',
       dayClosePromptedDate,
       exportedAt: new Date().toISOString(),

@@ -3,58 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#6c9cf5">
+  <meta name="theme-color" content="#2f66d0">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <title>虚拟自习室 - Virtual Study Room</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260816-3">
 </head>
 <body data-theme="light">
+  <!-- Local Lucide icon subset (ISC; see icons/LUCIDE-LICENSE.txt). -->
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12m-4-8 4-4 4 4M5 21h14a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7L20 8"/><path d="M20 3v5h-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 21h14a2 2 0 0 0 2-2v-2M3 17v2a2 2 0 0 0 2 2"/></symbol>
+    <symbol id="i-notebook" viewBox="0 0 24 24"><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M16 2v20M16 7h4M16 12h4"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-5M12 16V7M17 16v-3"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4a2 2 0 0 0 2 4h1M17 6h3a2 2 0 0 1-2 4h-1"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M22 12h-2M12 22v-2M2 12h2"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+    <symbol id="i-theme" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></symbol>
+    <symbol id="i-review" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8.5 11.5l2 2 4.5-4.5M9 17h6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  </svg>
 
   <!-- Background Layer -->
   <div id="bg-layer">
     <div id="bg-image"></div>
     <div id="bg-overlay"></div>
   </div>
-  <button id="btn-refresh-bg" title="切换背景">🖼️</button>
+  <button id="btn-refresh-bg" title="切换背景" aria-label="切换背景"><svg class="lucide-icon"><use href="#i-image"/></svg></button>
 
   <!-- Main App Container -->
   <div id="app">
     <!-- Top Bar -->
     <header id="topbar">
       <div class="logo">
-        <span class="logo-icon">📚</span>
+        <span class="logo-icon"><img src="icons/icon-192.png" alt=""></span>
         <span class="logo-text">虚拟自习室</span>
       </div>
       <div class="topbar-actions">
-        <button id="btn-plans" class="topbar-btn" title="学习计划">🗓️</button>
-        <button id="btn-import-hub" class="topbar-btn" title="一键导入完整模板">📥</button>
-        <button id="btn-sync" class="topbar-btn" title="设备同步">🔄</button>
-        <button id="btn-subjects" class="topbar-btn" title="学科中心">📚</button>
-        <button id="btn-courses" class="topbar-btn" title="课表与空闲时间">📅</button>
-        <button id="btn-download-templates" class="topbar-btn" title="下载 Excel 模板">⬇️</button>
-        <button id="btn-reviews" class="topbar-btn" title="每日复盘">📝</button>
-        <button id="btn-stats" class="topbar-btn" title="统计">📊</button>
-        <button id="btn-achievements" class="topbar-btn" title="成就">🏆</button>
-        <button id="btn-goals" class="topbar-btn" title="多目标倒计时">🎯</button>
-        <button id="btn-panorama" class="topbar-btn" title="全景专注模式" aria-label="进入全景专注模式">◉</button>
-        <button id="btn-refresh-app" class="topbar-btn" title="继续计时" aria-label="继续计时">↻</button>
-        <button id="btn-theme" class="topbar-btn" title="切换主题">🌓</button>
-        <button id="btn-fullscreen" class="topbar-btn" title="全屏">⛶</button>
+        <button id="btn-reviews" class="topbar-btn topbar-review" type="button" data-tooltip="复盘中心" aria-label="打开复盘中心"><svg class="lucide-icon"><use href="#i-review"/></svg></button>
+        <button id="btn-panorama" class="topbar-btn" type="button" data-tooltip="全景专注" aria-label="进入全景专注模式"><svg class="lucide-icon"><use href="#i-focus"/></svg></button>
+        <div class="topbar-more">
+          <button id="btn-more" class="topbar-btn" type="button" data-tooltip="更多功能" aria-label="打开更多功能" aria-expanded="false" aria-controls="topbar-menu"><svg class="lucide-icon"><use href="#i-more"/></svg></button>
+          <div id="topbar-menu" class="topbar-menu hidden" role="menu" aria-label="更多功能">
+            <div class="topbar-menu-label">学习管理</div>
+            <button id="btn-plans" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-calendar"/></svg><span><strong>周/月计划</strong><small>规划阶段目标</small></span></button>
+            <button id="btn-goals" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-target"/></svg><span><strong>目标倒计时</strong><small>管理多个目标</small></span></button>
+            <button id="btn-courses" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-calendar"/></svg><span><strong>课表与空闲时间</strong><small>查看可安排时段</small></span></button>
+            <div class="topbar-menu-label">数据工具</div>
+            <button id="btn-import-hub" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-upload"/></svg><span><strong>导入与模板</strong><small>下载模板或导入文件</small></span></button>
+            <button id="btn-sync" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-refresh"/></svg><span><strong>同步与备份</strong><small>Windows 权威归档</small></span></button>
+            <button id="btn-stats" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-chart"/></svg><span><strong>专注统计</strong><small>查看趋势与记录</small></span></button>
+            <button id="btn-achievements" class="topbar-menu-item" type="button" role="menuitem"><svg class="lucide-icon"><use href="#i-trophy"/></svg><span><strong>学习成就</strong><small>查看已解锁徽章</small></span></button>
+            <div class="topbar-menu-label">显示与计时</div>
+            <div class="topbar-menu-inline">
+              <button id="btn-refresh-app" type="button" title="继续计时"><svg class="lucide-icon"><use href="#i-rotate"/></svg><span>继续</span></button>
+              <button id="btn-theme" type="button" title="切换主题"><svg class="lucide-icon"><use href="#i-theme"/></svg><span>主题</span></button>
+              <button id="btn-fullscreen" type="button" title="全屏"><svg class="lucide-icon"><use href="#i-maximize"/></svg><span>全屏</span></button>
+            </div>
+          </div>
+        </div>
       </div>
   </header>
 
   <div id="import-hub-modal" class="modal">
     <div class="modal-backdrop"></div>
     <div class="modal-content import-hub-content glass-panel">
-      <div class="modal-header"><div><h2>📥 一键导入完整模板</h2><p class="modal-subtitle">同一个 Excel 可同时写入计划、学科目标和课表</p></div><button class="modal-close" aria-label="关闭">&times;</button></div>
+      <div class="modal-header"><div><h2>导入与模板</h2><p class="modal-subtitle">先下载最新版模板，填写后在同一处导入</p></div><button class="modal-close" aria-label="关闭">&times;</button></div>
       <div class="modal-body import-hub-body">
+        <section class="import-template-card"><div><strong>最新版统一模板</strong><small>包含今日任务、每日坚持、周/月计划和课表，附填写说明与示例。</small></div><button id="btn-download-templates" class="secondary-btn compact" type="button"><svg class="lucide-icon"><use href="#i-download"/></svg> 下载模板</button></section>
         <input id="import-hub-file" type="file" accept=".xlsx,.xls,.csv,.tsv" hidden>
-        <div id="import-hub-drop" class="import-hub-drop"><strong>选择或拖入模板文件</strong><small>建议使用“下载完整 Excel 模板”生成的文件</small><button id="btn-import-hub-select" class="secondary-btn compact" type="button">选择文件</button><p id="import-hub-name">尚未选择文件</p></div>
-        <div class="import-hub-options"><label><input id="import-hub-plans" type="checkbox" checked> 每日 / 每周 / 月度 / 阅读计划</label><label><input id="import-hub-subjects" type="checkbox" checked> 学科目标</label><label><input id="import-hub-courses" type="checkbox" checked> 课表与空闲时间</label></div>
+        <div id="import-hub-drop" class="import-hub-drop"><strong>选择或拖入已填写的模板</strong><small>支持 .xlsx、.xls、.csv、.tsv</small><button id="btn-import-hub-select" class="secondary-btn compact" type="button">选择文件</button><p id="import-hub-name">尚未选择文件</p></div>
+        <div class="import-hub-options"><label><input id="import-hub-plans" type="checkbox" checked> 今日任务 / 每日坚持 / 周计划 / 月计划</label><label><input id="import-hub-courses" type="checkbox" checked> 课表与空闲时间</label></div>
         <button id="btn-import-hub-confirm" class="primary-btn" type="button" disabled>导入勾选内容</button>
         <p id="import-hub-status" class="import-hub-status"></p>
       </div>
@@ -95,17 +128,17 @@
       <!-- Left: Task Panel -->
       <aside id="task-panel" class="glass-panel">
         <div class="panel-header">
-          <h3>📋 今日任务</h3>
+          <h3><svg class="lucide-icon"><use href="#i-list"/></svg> 每日任务</h3>
           <div class="panel-header-actions">
             <button id="btn-quick-import" class="mini-action" type="button" title="导入计划">导入</button>
             <span id="task-count" class="badge">0</span>
           </div>
         </div>
+        <div class="task-kind-row"><label for="task-kind">任务形式</label><select id="task-kind"><option value="today">今日任务</option><option value="habit">每日坚持</option></select></div>
         <div id="task-input-area">
           <input type="text" id="task-input" placeholder="添加新任务，按 Enter 确认..." maxlength="200">
-          <button id="btn-add-task" class="icon-btn" title="添加">＋</button>
+          <button id="btn-add-task" class="icon-btn" title="添加任务" aria-label="添加任务"><svg class="lucide-icon"><use href="#i-plus"/></svg></button>
         </div>
-        <div class="task-context-row"><label for="task-subject-select">归属学科</label><select id="task-subject-select"><option value="">未分类</option></select></div>
         <div class="task-taxonomy-row"><input id="task-category-path" type="text" maxlength="80" placeholder="分类：考研/数学/高数"><input id="task-tags" type="text" maxlength="120" placeholder="标签：重点,真题"></div>
         <select id="task-category-filter" class="task-category-filter" aria-label="按分类筛选"><option value="">全部分类</option></select>
         <ul id="task-list" class="scrollable">
@@ -120,9 +153,10 @@
           <span class="focus-kicker">FOCUS SESSION</span>
           <h1>此刻，只做一件事</h1>
         </div>
-        <div id="session-context" class="session-context">
-          <label>大任务方向<select id="session-subject-select"><option value="">未分类</option></select></label>
-          <label>本次小任务<input id="session-task-input" type="text" maxlength="120" placeholder="例如：完成二次型基础题 20 题"></label>
+        <div id="session-context" class="session-context unified-task-picker">
+          <label>本次专注任务<select id="session-task-select"><option value="">选择今日要专注的任务</option></select></label>
+          <label>本次备注（可选）<input id="session-note" type="text" maxlength="200" placeholder="例如：完成第 3 章例题并订正"></label>
+          <button id="btn-new-timer-task" class="text-btn" type="button">新建任务</button>
         </div>
         <div id="timer-container">
           <svg id="timer-ring" viewBox="0 0 200 200">
@@ -200,9 +234,7 @@
             <div class="info-label">目标倒计时</div>
             <button id="btn-open-goals" class="text-btn" type="button">管理</button>
           </div>
-          <select id="goal-select" class="goal-select" aria-label="选择目标"></select>
-          <strong id="goal-countdown">还没有目标</strong>
-          <span id="goal-meta">可以同时记录考研、雅思和坚持目标</span>
+          <div id="goal-overview-list" class="goal-overview-list"><span class="goal-overview-empty">还没有目标</span></div>
         </div>
         <div id="weekly-plan-card" class="info-card weekly-plan-card">
           <div class="goal-card-head"><div class="info-label">本周计划</div><button id="btn-open-weekly-plans" class="text-btn" type="button">查看全部</button></div>
@@ -211,65 +243,11 @@
       </aside>
     </main>
 
-    <!-- Audio Bar -->
-    <footer id="audio-bar" class="glass-panel">
-      <div class="audio-left">
-        <select id="sound-select" class="sound-select">
-          <option value="none">🔇 无声音</option>
-          <optgroup label="🌿 白噪音">
-            <option value="rain">🌧️ 雨声</option>
-            <option value="cafe">☕ 咖啡厅</option>
-            <option value="fireplace">🔥 篝火</option>
-            <option value="ocean">🌊 海浪</option>
-            <option value="forest">🌲 森林鸟鸣</option>
-            <option value="wind">💨 风声</option>
-          </optgroup>
-          <optgroup label="🎵 轻音乐">
-            <option value="lofi1">🎹 钢琴轻音</option>
-            <option value="lofi2">🎸 吉他慢奏</option>
-            <option value="lofi3">🎻 大提琴</option>
-          </optgroup>
-        </select>
-        <button id="btn-play-audio" class="icon-btn" title="播放/暂停">▶️</button>
-      </div>
-      <div class="audio-center">
-        <span id="now-playing" class="now-playing">未播放</span>
-      </div>
-      <div class="audio-right">
-        <button id="btn-mute" class="icon-btn" title="静音">🔊</button>
-        <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="50" title="音量">
-        <span id="volume-label">50%</span>
-      </div>
-    </footer>
   </div>
 
   <!-- Panorama focus mode: the work surface disappears and the scenic background takes over. -->
   <div id="panorama-exit" aria-hidden="true">
     <button id="btn-exit-panorama" class="panorama-exit-btn" type="button">退出全景</button>
-  </div>
-
-  <!-- Subject Center Modal -->
-  <div id="subjects-modal" class="modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content subjects-content glass-panel">
-      <div class="modal-header"><div><h2>📚 学科中心</h2><p class="modal-subtitle">把目标拆成每天能验收的数量和时间</p></div><button class="modal-close" aria-label="关闭">&times;</button></div>
-      <div class="modal-body subject-body">
-        <div id="subject-progress-grid" class="subject-progress-grid"></div>
-        <section class="subject-import-tools"><input id="subject-file-input" type="file" accept=".xlsx,.xls,.csv,.tsv" hidden><button id="btn-import-subjects" class="secondary-btn compact" type="button">📥 导入学科目标</button><button id="btn-download-subject-template" class="text-btn" type="button">下载完整 Excel 模板</button></section>
-        <section class="subject-editor">
-          <div class="daily-close-section-title"><h3>设置学科目标</h3><button id="btn-new-subject" class="text-btn" type="button">新建学科</button></div>
-          <div class="subject-form-grid">
-            <label>学科<select id="subject-edit-select"></select></label>
-            <label>学科名称<input id="subject-name" type="text" placeholder="例如：数学"></label>
-            <label>目标 / 截止日期<input id="subject-target" type="text" placeholder="例如：考研数学一 120 分 · 12月20日"></label>
-            <label>每日任务量<input id="subject-daily-tasks" type="number" min="0" max="999" step="1" placeholder="例如：40"></label>
-            <label>每日学习分钟<input id="subject-daily-minutes" type="number" min="0" max="1440" step="5" placeholder="例如：150"></label>
-            <label>时间安排<input id="subject-time-range" type="text" placeholder="例如：09:00-11:30"></label>
-          </div>
-          <div class="subject-form-actions"><button id="btn-delete-subject" class="text-btn danger" type="button">删除学科</button><button id="btn-save-subject" class="primary-btn compact" type="button">保存学科目标</button></div>
-        </section>
-      </div>
-    </div>
   </div>
 
   <!-- Course Timetable Modal -->
@@ -286,22 +264,44 @@
     </div>
   </div>
 
-  <!-- Task Review Modal -->
-  <div id="task-review-modal" class="modal">
+  <!-- Pomodoro Session Review Modal -->
+  <div id="session-review-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="session-review-title">
     <div class="modal-backdrop"></div>
     <div class="modal-content review-prompt-content glass-panel">
       <div class="modal-header">
-        <div><h2>✅ 完成任务复盘</h2><p id="review-task-name" class="modal-subtitle">—</p></div>
+        <div><h2 id="session-review-title">本次专注复盘</h2><p id="session-review-task-name" class="modal-subtitle">—</p></div>
+        <button class="modal-close" aria-label="跳过本次复盘并关闭">&times;</button>
+      </div>
+      <div class="modal-body review-form">
+        <p class="review-optional-hint">所有内容均可不填。保存或跳过后开始休息。</p>
+        <label>本次备注<input id="session-review-note" type="text" maxlength="200" placeholder="开始前或专注过程中的简短记录"></label>
+        <label>完成情况<textarea id="session-review-result" rows="3" maxlength="600" placeholder="这一个番茄钟实际推进了什么？"></textarea></label>
+        <div class="review-form-row">
+          <label>状态<select id="session-review-difficulty"><option value="">不标记</option><option value="顺利">顺利</option><option value="正常">正常</option><option value="困难">困难</option><option value="卡住">卡住</option></select></label>
+          <label>下次接续动作<input id="session-review-next" type="text" maxlength="300" placeholder="下一个番茄钟从哪里继续？"></label>
+        </div>
+        <div class="review-form-actions"><button id="btn-skip-session-review" class="text-btn" type="button">跳过复盘</button><button id="btn-save-session-review" class="primary-btn compact" type="button">保存并休息</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Review Modal -->
+  <div id="task-review-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="task-review-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content review-prompt-content glass-panel">
+      <div class="modal-header">
+        <div><h2 id="task-review-title">任务完成复盘</h2><p id="review-task-name" class="modal-subtitle">—</p></div>
         <button class="modal-close" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body review-form">
-        <label>完成情况<textarea id="review-result" rows="3" placeholder="完成了什么？做到哪一步？"></textarea></label>
+        <p class="review-optional-hint">这是整项任务的收尾复盘，所有内容均可跳过。</p>
+        <label>结果事实<textarea id="review-result" rows="3" placeholder="实际完成了什么？做到哪一步？"></textarea></label>
         <div class="review-form-row">
-          <label>难度<select id="review-difficulty"><option value="轻松">轻松</option><option value="正常" selected>正常</option><option value="困难">困难</option><option value="卡住">卡住</option></select></label>
-          <label>实际产出<input id="review-output" type="text" placeholder="例如：完成20题、整理1页笔记"></label>
+          <label>难度<select id="review-difficulty"><option value="">不标记</option><option value="轻松">轻松</option><option value="正常">正常</option><option value="困难">困难</option><option value="卡住">卡住</option></select></label>
+          <label>产出证据<input id="review-output" type="text" placeholder="例如：完成20题、整理1页笔记"></label>
         </div>
-        <label>下一步<textarea id="review-next" rows="2" placeholder="下次从哪里继续？"></textarea></label>
-        <div class="review-form-actions"><button id="btn-skip-review" class="text-btn" type="button">稍后补充</button><button id="btn-save-review" class="primary-btn compact" type="button">保存复盘</button></div>
+        <label>下次第一步<textarea id="review-next" rows="2" placeholder="下一次打开这项任务时，先做哪个具体动作？"></textarea></label>
+        <div class="review-form-actions"><button id="btn-skip-review" class="text-btn" type="button">跳过复盘</button><button id="btn-save-review" class="primary-btn compact" type="button">保存复盘</button></div>
       </div>
     </div>
   </div>
@@ -311,14 +311,22 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content reviews-content glass-panel">
       <div class="modal-header">
-        <div><h2>📝 每日复盘</h2><p class="modal-subtitle">把完成记录变成可执行的下一步</p></div>
+        <div><h2>复盘中心</h2><p class="modal-subtitle">记录事实、提炼问题、确定下一步，并沉淀为可查阅的历史</p></div>
         <button class="modal-close" aria-label="关闭">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="review-summary-cards"><div><strong id="review-summary-completed">0</strong><span>完成任务</span></div><div><strong id="review-summary-reviewed">0</strong><span>已复盘</span></div><div><strong id="review-summary-minutes">0</strong><span>专注分钟</span></div><div><strong id="review-summary-difficulty">—</strong><span>主要难度</span></div></div>
-        <p id="review-summary-text" class="review-summary-text">完成任务后写下复盘，系统会自动汇总今天的学习情况。</p>
-        <div class="review-list-header"><h4>今日任务复盘</h4><div><button id="btn-open-day-close" class="primary-btn compact" type="button">🌙 今日收尾</button><button id="btn-export-review-md" class="text-btn" type="button">导出 Markdown</button><button id="btn-export-review-json" class="text-btn" type="button">导出 JSON</button></div></div>
-        <div id="review-list" class="review-list"></div>
+      <div class="modal-body review-center-body">
+        <div class="review-view-tabs" role="tablist" aria-label="复盘视图"><button class="review-view-tab active" type="button" role="tab" aria-selected="true" data-review-tab="today">今日复盘</button><button class="review-view-tab" type="button" role="tab" aria-selected="false" data-review-tab="history">过往复盘</button></div>
+        <section id="review-today-panel" class="review-view-panel" role="tabpanel">
+          <div class="review-flow" aria-label="复盘流程"><div class="done"><span>1</span><strong>番茄专注</strong><small>选择任务并记录备注</small></div><div><span>2</span><strong>单次复盘</strong><small>番茄结束自动询问</small></div><div><span>3</span><strong>任务复盘</strong><small>完成任务时自动询问</small></div><div><span>4</span><strong>每日总结</strong><small>主动进入复盘中心</small></div></div>
+          <div class="review-summary-cards"><div><strong id="review-summary-completed">0</strong><span>完成任务</span></div><div><strong id="review-summary-reviewed">0</strong><span>已复盘</span></div><div><strong id="review-summary-minutes">0</strong><span>专注分钟</span></div><div><strong id="review-summary-difficulty">—</strong><span>主要难度</span></div></div>
+          <p id="review-summary-text" class="review-summary-text">番茄钟和任务结束时自动询问复盘；每日总结由你主动进入复盘中心完成。</p>
+          <div class="review-list-header"><h4>今日任务</h4><div><button id="btn-open-day-close" class="primary-btn compact" type="button">每日总结复盘</button><button id="btn-export-review-md" class="text-btn" type="button">导出 MD</button><button id="btn-export-review-json" class="text-btn" type="button">导出 JSON</button></div></div>
+          <div id="review-list" class="review-list"></div>
+        </section>
+        <section id="review-history-panel" class="review-view-panel" role="tabpanel" hidden>
+          <div class="review-history-toolbar"><div><strong>复盘日历</strong><small>过去日期查复盘，未来日期安排待办；方向键可快速切换日期</small></div><div class="review-calendar-nav"><button id="review-calendar-prev" class="icon-btn" type="button" aria-label="上个月"><svg class="lucide-icon"><use href="#i-chevron-left"/></svg></button><label class="review-month-picker"><span class="sr-only">选择月份</span><input id="review-calendar-month" type="month" aria-label="选择复盘月份"></label><button id="review-calendar-next" class="icon-btn" type="button" aria-label="下个月"><svg class="lucide-icon"><use href="#i-chevron-right"/></svg></button><button id="review-calendar-today" class="text-btn" type="button">今天</button></div></div>
+          <div class="review-history-layout"><section class="review-calendar-card" aria-label="复盘日历"><div class="review-calendar-heading"><h3 id="review-calendar-title">—</h3><p id="review-calendar-summary" aria-live="polite">—</p></div><div class="review-calendar-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="review-calendar-grid" class="review-calendar-grid" role="grid" aria-label="按日期选择复盘"></div><div class="review-calendar-legend"><span><i class="is-today"></i>今天</span><span><i class="has-review"></i>有复盘</span><span><i class="has-todo"></i>有待办</span></div></section><article id="review-history-detail" class="review-history-detail" aria-live="polite"><div class="review-empty">选择过去日期查阅复盘，或选择未来日期添加待办。</div></article></div>
+        </section>
       </div>
     </div>
   </div>
@@ -328,7 +336,7 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content daily-close-content glass-panel">
       <div class="modal-header">
-        <div><h2>🌙 每日收尾审查</h2><p class="modal-subtitle">不写“差不多”，只留下事实、问题和明天的动作</p></div>
+        <div><h2>每日总结复盘</h2><p class="modal-subtitle">主动汇总今天的事实，再确定明天最先执行的动作</p></div>
         <button class="modal-close" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body daily-close-body">
@@ -337,8 +345,8 @@
           <div id="day-close-review-summary" class="day-close-review-summary"></div>
         </section>
         <section class="daily-close-fields">
-          <label>整日复盘<textarea id="day-close-self-review" rows="5" placeholder="今天真正推进了什么？哪里浪费了时间？为什么？请写具体事实。"></textarea></label>
-          <label>留给明天的未完成任务清单<textarea id="day-close-tomorrow-tasks" rows="5" placeholder="每行一项，写清动作、数量和截止时间。例如：09:00–10:00 完成数学错题第21–40题。"></textarea></label>
+          <label>一日复盘（可选）<textarea id="day-close-self-review" rows="5" placeholder="今天真正推进了什么？最主要的问题是什么？原因是什么？"></textarea></label>
+          <label>明日提醒（可选，每行一项）<textarea id="day-close-tomorrow-tasks" rows="5" placeholder="保存后会自动成为下一学习日的每日任务，届时可直接完成或删除。"></textarea></label>
         </section>
         <section class="deepseek-panel">
           <div class="daily-close-section-title"><div><h3>DeepSeek 犀利点评</h3><p>识别借口、含糊表达和计划漏洞，给出可验收的明日动作。</p></div><button id="btn-deepseek-analyze" class="primary-btn compact" type="button">开始严格分析</button></div>
@@ -353,7 +361,7 @@
             <div class="api-settings-footer"><p>⚠️ Key 仅保存在当前浏览器本地。纯网页直连接口仍可能暴露 Key，建议使用限额 Key；公开部署时请改用自己的后端代理。</p><button id="btn-save-deepseek-settings" class="text-btn" type="button">保存设置</button></div>
           </details>
         </section>
-        <div class="daily-close-actions"><button id="btn-export-day-close" class="text-btn" type="button">导出完整复盘</button><button id="btn-save-day-close" class="primary-btn" type="button">保存今日收尾</button></div>
+        <div class="daily-close-actions"><button id="btn-export-day-close" class="text-btn" type="button">导出完整复盘</button><button id="btn-save-day-close" class="primary-btn" type="button">保存每日总结</button></div>
       </div>
     </div>
   </div>
@@ -412,10 +420,10 @@
             <h4>📆 本月趋势</h4>
             <canvas id="chart-monthly"></canvas>
           </div>
-          <div class="chart-container chart-subjects-container">
-            <h4>🎯 大方向用时占比</h4>
-            <canvas id="chart-subjects"></canvas>
-            <div id="chart-subjects-empty" class="chart-fallback hidden">完成带有大方向的专注后，这里会显示占比</div>
+          <div class="chart-container chart-categories-container">
+            <h4>任务分类专注占比</h4>
+            <canvas id="chart-categories"></canvas>
+            <div id="chart-categories-empty" class="chart-fallback hidden">完成带有分类的任务专注后，这里会显示占比</div>
           </div>
         </div>
         <div class="heatmap-container">
@@ -449,8 +457,8 @@
     <div class="modal-content plan-modal-content glass-panel">
       <div class="modal-header">
         <div>
-          <h2>🗓️ 学习计划</h2>
-          <p class="modal-subtitle">每日、每周、月度和阅读计划集中管理</p>
+          <h2>周计划与月计划</h2>
+          <p class="modal-subtitle">每日事项统一在“每日任务”管理，这里只保留周计划和月计划</p>
         </div>
         <button class="modal-close" aria-label="关闭">&times;</button>
       </div>
@@ -471,11 +479,9 @@
             <div><small>待导入文件</small><strong id="import-file-name">—</strong></div>
             <button id="btn-cancel-import" class="text-btn" type="button">取消</button>
           </div>
-          <div class="import-count-grid">
-            <div><strong id="import-daily-count">0</strong><span>每日</span></div>
+          <div class="import-count-grid two-columns">
             <div><strong id="import-weekly-count">0</strong><span>每周</span></div>
             <div><strong id="import-monthly-count">0</strong><span>月度</span></div>
-            <div><strong id="import-reading-count">0</strong><span>阅读/资料</span></div>
           </div>
           <p id="import-hint" class="import-hint"></p>
           <div id="import-preview-list" class="import-preview-list"></div>
@@ -488,35 +494,18 @@
         </section>
 
         <section class="plan-overview">
-          <div id="plan-scope-summary" class="plan-scope-summary" aria-label="月周日计划完成概览"></div>
+          <div id="plan-scope-summary" class="plan-scope-summary" aria-label="周计划与月计划完成概览"></div>
           <div class="plan-tabs" role="tablist" aria-label="计划分类">
-            <button class="plan-tab active" data-scope="daily" role="tab">今日</button>
-            <button class="plan-tab" data-scope="weekly" role="tab">本周</button>
+            <button class="plan-tab active" data-scope="weekly" role="tab">本周</button>
             <button class="plan-tab" data-scope="monthly" role="tab">本月</button>
-            <button class="plan-tab" data-scope="reading" role="tab">阅读</button>
             <button class="plan-tab" data-scope="all" role="tab">全部</button>
           </div>
           <div class="plan-progress-row">
-            <span id="plan-view-title">今日计划</span>
+            <span id="plan-view-title">本周计划</span>
             <div class="plan-progress-actions">
-              <button id="btn-carry-forward" class="text-btn" type="button">顺延未完成</button>
               <span id="plan-progress-text">0 / 0</span>
             </div>
           </div>
-          <div id="day-timeline" class="day-timeline hidden"></div>
-          <section id="time-grid-section" class="time-grid-section hidden">
-            <div class="time-grid-heading">
-              <div><strong>48 格时间分配</strong><small>每格 30 分钟，按住拖动选择连续时间</small></div>
-              <span id="time-grid-selection-label">未选择</span>
-            </div>
-            <div id="time-grid" class="time-grid" aria-label="一天48个半小时时间格"></div>
-            <div class="time-grid-controls">
-              <select id="time-grid-plan-select" aria-label="选择要分配的任务">
-                <option value="">先选择任务</option>
-              </select>
-              <button id="btn-assign-time-grid" class="primary-btn compact" type="button">分配时间</button>
-            </div>
-          </section>
           <div id="plan-list" class="plan-list"></div>
         </section>
       </div>
@@ -575,18 +564,16 @@
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/background.js"></script>
-  <script src="js/audio.js"></script>
   <script src="js/timer.js"></script>
   <script src="js/templates.js"></script>
-  <script src="js/subjects.js"></script>
   <script src="js/courses.js"></script>
-  <script src="js/tasks.js?v=20260809"></script>
+  <script src="js/tasks.js?v=20260816-3"></script>
   <script src="js/plans.js"></script>
   <script src="js/import-hub.js"></script>
   <script src="shared/archive-core.js"></script>
   <script src="js/sync.js"></script>
   <script>if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});</script>
-  <script src="js/reviews.js"></script>
+  <script src="js/reviews.js?v=20260816-3"></script>
   <script src="js/stats.js"></script>
   <script src="js/goals.js"></script>
   <script src="js/app.js"></script>

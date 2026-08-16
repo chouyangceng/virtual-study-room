@@ -10,11 +10,11 @@
   const DEVICE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{7,127}$/;
   const ARCHIVE_KEYS = [
     'focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings',
-    'subjects', 'courses', 'studyGoals', 'dailyReviews', 'dailyCloseEntries',
-    'dailyData', 'appSettings', 'audioSettings', 'deepseekSettings',
-    'currentSubjectId', 'currentStudyGoal', 'dayClosePromptedDate'
+    'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries',
+    'dailyData', 'appSettings', 'deepseekSettings',
+    'currentStudyGoal', 'dayClosePromptedDate'
   ];
-  const HISTORY_KEYS = ['focusSessions', 'dailyReviews', 'dailyCloseEntries'];
+  const HISTORY_KEYS = ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries'];
 
   function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));

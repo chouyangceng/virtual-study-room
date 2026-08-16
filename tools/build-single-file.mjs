@@ -11,7 +11,7 @@ const outPath = path.join(root, '虚拟自习室.html');
 let html = fs.readFileSync(indexPath, 'utf8');
 
 const css = fs.readFileSync(path.join(root, 'css', 'style.css'), 'utf8');
-html = html.replace('<link rel="stylesheet" href="css/style.css">', () => `<style>\n${css}\n</style>`);
+html = html.replace(/<link rel="stylesheet" href="css\/style\.css(?:\?[^\"]*)?">/, () => `<style>\n${css}\n</style>`);
 
 const inline = (src) => {
   const file = path.join(root, src.replace(/[?#].*$/, ''));

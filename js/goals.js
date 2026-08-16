@@ -35,11 +35,6 @@ const GoalManager = {
     document.getElementById('btn-open-goals')?.addEventListener('click', () => this.open());
     document.getElementById('goals-modal')?.querySelector('.modal-close')?.addEventListener('click', () => this.close());
     document.getElementById('goals-modal')?.querySelector('.modal-backdrop')?.addEventListener('click', () => this.close());
-    document.getElementById('goal-select')?.addEventListener('change', event => {
-      this.currentId = event.target.value;
-      this.save();
-      this.render();
-    });
     document.getElementById('goal-type')?.addEventListener('change', () => this.toggleTypeRows());
     document.getElementById('btn-new-goal')?.addEventListener('click', () => this.clearForm());
     document.getElementById('btn-save-goal')?.addEventListener('click', () => this.saveForm());
@@ -67,41 +62,31 @@ const GoalManager = {
 
   startClock() {
     if (this.timerId) clearInterval(this.timerId);
-    this.timerId = setInterval(() => this.renderCurrent(), 60000);
+    this.timerId = setInterval(() => this.renderOverview(), 60000);
   },
 
   render() {
     if (!this.currentId && this.goals.length) this.currentId = this.goals[0].id;
-    this.renderSelect();
     this.renderList();
-    this.renderCurrent();
+    this.renderOverview();
     this.toggleTypeRows();
   },
 
-  renderSelect() {
-    const select = document.getElementById('goal-select');
-    if (!select) return;
+  renderOverview() {
+    const target = document.getElementById('goal-overview-list');
+    if (!target) return;
     if (!this.goals.length) {
-      select.innerHTML = '<option value="">暂无目标</option>';
+      target.innerHTML = '<span class="goal-overview-empty">还没有目标，点击“管理”添加</span>';
       return;
     }
-    select.innerHTML = this.goals.map(goal => `<option value="${goal.id}">${this.escape(goal.name)}</option>`).join('');
-    select.value = this.currentId || this.goals[0].id;
-  },
-
-  renderCurrent() {
-    const goal = this.goals.find(item => item.id === this.currentId);
-    const countdown = document.getElementById('goal-countdown');
-    const meta = document.getElementById('goal-meta');
-    if (!countdown || !meta) return;
-    if (!goal) {
-      countdown.textContent = '还没有目标';
-      meta.textContent = '可以同时记录考研、雅思和坚持目标';
-      return;
-    }
-    const status = this.getGoalStatus(goal);
-    countdown.textContent = status.title;
-    meta.textContent = `${goal.name} · ${status.meta}`;
+    target.innerHTML = this.goals.map(goal => {
+      const status = this.getGoalStatus(goal);
+      return `<button class="goal-overview-item" type="button" data-id="${this.escape(goal.id)}"><span>${this.escape(goal.name)}</span><strong>${this.escape(status.title)}</strong><small>${this.escape(status.meta)}</small></button>`;
+    }).join('');
+    target.querySelectorAll('.goal-overview-item').forEach(button => button.addEventListener('click', () => {
+      this.open();
+      this.editGoal(button.dataset.id);
+    }));
   },
 
   renderList() {
