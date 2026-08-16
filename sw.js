@@ -1,12 +1,12 @@
-const CACHE = 'virtual-study-room-v15';
+const CACHE = 'virtual-study-room-v19';
 const APP_SHELL = [
-  './', './index.html', './css/style.css?v=20260816-3', './manifest.webmanifest',
+  './', './index.html', './css/style.css?v=20260816-9', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
   './vendor/chart.umd.min.js', './vendor/xlsx.full.min.js',
-  './shared/archive-core.js?v=20260816-5', './js/storage.js', './js/background.js',
+  './shared/archive-core.js?v=20260816-9', './js/storage.js', './js/background.js',
   './js/timer.js', './js/templates.js', './js/courses.js',
   './js/tasks.js?v=20260816-3', './js/plans.js?v=20260816-5',
-  './js/import-hub.js', './js/sync.js?v=20260816-5', './js/reviews.js?v=20260816-5', './js/stats.js?v=20260816-5',
+  './js/import-hub.js', './js/sync.js?v=20260816-9', './js/reviews.js?v=20260816-9', './js/stats.js?v=20260816-9',
   './js/goals.js?v=20260816-5', './js/app.js?v=20260816-5'
 ];
 

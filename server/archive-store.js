@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { validateSnapshot } = require('../shared/archive-core');
+const { validateSnapshot, mergeArchiveAppData } = require('../shared/archive-core');
 
 function sha256(buffer) {
   return crypto.createHash('sha256').update(buffer).digest('hex');
@@ -138,6 +138,17 @@ class ArchiveStore {
     const body = await fs.promises.readFile(filePath);
     if (sha256(body) !== receipt.sha256) throw new Error('归档哈希校验失败');
     return { receipt, body };
+  }
+
+  async aggregateLatest() {
+    const snapshots = await this.listSnapshots();
+    const entries = [];
+    for (const receipt of snapshots) {
+      const found = await this.readSnapshot(receipt.deviceId, receipt.archiveId);
+      if (!found) continue;
+      entries.push({ receipt, snapshot: JSON.parse(found.body.toString('utf8')) });
+    }
+    return { generatedAt: new Date().toISOString(), ...mergeArchiveAppData(entries) };
   }
 }
 

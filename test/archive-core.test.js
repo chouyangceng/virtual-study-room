@@ -110,6 +110,33 @@ test('SHA-256 fallback matches the platform implementation', () => {
   }
 });
 
+test('archive aggregate merges timing and review records across devices without leaking credentials', () => {
+  const mac = Core.createSnapshot({
+    deviceId: 'device-mac-1234', deviceName: 'Mac', createdAt: '2026-08-16T01:00:00Z',
+    appData: {
+      focusSessions: [{ id: 'session-mac', date: '2026-08-16', duration: 25 }],
+      sessionReviews: [{ id: 'sr-mac', sessionId: 'session-mac', date: '2026-08-16', result: '完成一节' }],
+      weeklyReports: [{ id: 'week-1', weekStart: '2026-08-10', content: '旧稿' }],
+      deepseekSettings: { apiKey: 'must-not-leak', model: 'deepseek-chat' },
+    }
+  });
+  const tablet = Core.createSnapshot({
+    deviceId: 'device-pad-1234', deviceName: '平板', createdAt: '2026-08-16T02:00:00Z',
+    appData: {
+      focusSessions: [{ id: 'session-pad', date: '2026-08-16', duration: 50 }],
+      dailyReviews: [{ id: 'review-pad', date: '2026-08-16', result: '复习错题' }],
+      weeklyReports: [{ id: 'week-1', weekStart: '2026-08-10', content: '新稿' }],
+    }
+  });
+  const aggregate = Core.mergeArchiveAppData([{ snapshot: mac }, { snapshot: tablet }]);
+  assert.equal(aggregate.devices.length, 2);
+  assert.equal(aggregate.appData.focusSessions.length, 2);
+  assert.equal(aggregate.appData.sessionReviews[0]._archiveDeviceName, 'Mac');
+  assert.equal(aggregate.appData.weeklyReports.length, 1);
+  assert.equal(aggregate.appData.weeklyReports[0].content, '新稿');
+  assert.equal(JSON.stringify(aggregate).includes('must-not-leak'), false);
+});
+
 test('deleting a session reconciles reviews, day-close snapshots, daily totals and task counters', () => {
   const session = { id: 'session-1', taskId: 'task-1', date: '2026-08-16', duration: 25, timestamp: 100 };
   const kept = { id: 'session-2', taskId: 'task-1', date: '2026-08-16', duration: 10, timestamp: 200 };

@@ -1,6 +1,6 @@
 const SyncManager = {
   latestSchemaVersion: typeof VsrArchiveCore !== 'undefined' ? VsrArchiveCore.SNAPSHOT_SCHEMA_VERSION : 3,
-  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
+  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
   settingsKey: 'syncSettings',
   stateKey: 'syncState',
   inFlight: null,
@@ -8,6 +8,8 @@ const SyncManager = {
   backoffUntil: 0,
   failureCount: 0,
   archives: [],
+  aggregate: null,
+  localArchiveConfig: null,
 
   init() {
     const modal = document.getElementById('sync-modal');
@@ -26,6 +28,7 @@ const SyncManager = {
     this.fillSettings();
     this.renderStatus();
     this.configureTimer();
+    this.bootstrapLocalArchive();
     window.addEventListener('online', () => this.scheduleUpload('online', 800));
     window.addEventListener('offline', () => this.renderStatus('offline', '当前离线，计时与本地保存不受影响'));
     document.addEventListener('visibilitychange', () => {
@@ -324,6 +327,15 @@ const SyncManager = {
     } catch (error) { this.renderStatus('failed', `读取归档失败：${error.message}`); }
   },
 
+  async fetchArchiveAggregate() {
+    if (!this.networkSupported()) return null;
+    const settings = this.getSettings();
+    if (!settings.serviceUrl || !settings.token) return null;
+    const { data } = await this.request('/api/v1/aggregate');
+    this.aggregate = data && data.appData ? data : null;
+    return this.aggregate;
+  },
+
   renderArchiveList() {
     const container = document.getElementById('sync-archive-list');
     if (!this.archives.length) { container.innerHTML = '<p class="sync-empty">Windows 尚无归档。</p>'; return; }
@@ -406,12 +418,34 @@ const SyncManager = {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
-  async loadLocalConfig() {
+  async bootstrapLocalArchive() {
     if (location.protocol !== 'http:' && location.protocol !== 'https:') return;
+    const platform = navigator.userAgentData?.platform || navigator.platform || '';
+    if (!/win/i.test(platform)) return;
     try {
       const response = await fetch('/api/v1/local-config');
       if (!response.ok) return;
       const config = await response.json();
+      this.localArchiveConfig = config;
+      const settings = this.getSettings();
+      const next = {
+        ...settings,
+        serviceUrl: location.origin,
+        token: config.token,
+        deviceName: settings.deviceName || 'Windows 数据中心',
+      };
+      SafeStore.set(this.settingsKey, JSON.stringify(next));
+      this.configureTimer();
+      this.fillSettings();
+      this.scheduleUpload('windows-bootstrap', 300);
+      return config;
+    } catch (error) { return null; }
+  },
+
+  async loadLocalConfig() {
+    const config = this.localArchiveConfig || await this.bootstrapLocalArchive();
+    if (!config) return;
+    try {
       document.getElementById('sync-local-config').hidden = false;
       document.getElementById('sync-local-config').innerHTML = `<strong>Windows 归档终端</strong><span>服务地址：${this.escape((config.serviceUrls || []).join(' / ') || location.origin)}</span><span>数据目录：${this.escape(config.dataDirectory)}</span><span>同步 token：<code>${this.escape(config.token)}</code></span>`;
     } catch (error) { /* non-Windows clients cannot read local config */ }

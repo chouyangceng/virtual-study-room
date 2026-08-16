@@ -1,6 +1,6 @@
 # 虚拟自习室 Agent Handoff
 
-当前版本：1.2.1（Windows 轻量版优先；Mac Electron 配置保留，正式无警告安装仍需 Apple 签名与公证）。
+当前版本：1.3.0（Windows 为权威数据中心；Mac Electron 可通过地址与 token 上传，正式无警告安装仍需 Apple 签名与公证）。
 
 当前 Windows 发布形式为轻量版：`E:\虚拟自习室\轻量版\虚拟自习室.exe`。它复用系统 Edge 和 Node，不再使用 Electron 大包。桌面快捷方式已指向该启动器。
 
@@ -69,3 +69,6 @@ Windows 无法完成 Apple notarization。Mac 正式包应在 macOS 构建机配
 - 1.2.1 严格审计后 Service Worker 缓存升级为 `virtual-study-room-v15`，关键业务脚本使用 `v=20260816-5` 缓存标识。
 - 删除专注记录会级联复盘、日终快照、任务番茄计数和分钟统计，自动化测试增至 14 项。
 - npm 依赖审计为 0 漏洞；Electron 43.4.0、electron-builder 26.15.3。
+- 1.3.0 修复跨源预检后，Mac/平板可向 Windows 上传；`/api/v1/aggregate` 汇总全部不可变快照并按记录 ID 去重。
+- 复盘中心升级为今日整合、每日档案和每周报告完整界面；DeepSeek Key 永不进入同步，周报正文加入归档字段。
+- 1.3.0 自动化测试为 16 项，Service Worker 使用 `virtual-study-room-v19`，跨端与复盘脚本缓存标识为 `v=20260816-9`。

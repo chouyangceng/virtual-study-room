@@ -43,6 +43,7 @@ test('health is anonymous while snapshot APIs require a bearer token', async t =
   t.after(() => f.close());
   assert.equal((await fetch(`${f.baseUrl}/api/v1/health`)).status, 200);
   assert.equal((await fetch(`${f.baseUrl}/api/v1/snapshots`)).status, 401);
+  assert.equal((await fetch(`${f.baseUrl}/api/v1/aggregate`)).status, 401);
   assert.equal((await fetch(`${f.baseUrl}/api/v1/snapshots`, { headers: { Authorization: 'Bearer wrong' } })).status, 401);
 });
 
@@ -67,6 +68,44 @@ test('authorized upload is atomically persisted, indexed and hash-verifiable on 
   assert.equal(download.status, 200);
   assert.equal(download.headers.get('x-archive-sha256'), expectedHash);
   assert.equal(await download.text(), raw);
+});
+
+test('authenticated cross-origin clients can upload and Windows returns a durable cross-device aggregate', async t => {
+  const f = await fixture();
+  t.after(() => f.close());
+  const token = `Bearer ${f.service.store.token}`;
+  const origin = 'http://127.0.0.1:51234';
+  const preflight = await fetch(`${f.baseUrl}/api/v1/snapshots`, {
+    method: 'OPTIONS',
+    headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type' }
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+
+  const upload = async (deviceId, deviceName, createdAt, appData) => fetch(`${f.baseUrl}/api/v1/snapshots`, {
+    method: 'POST',
+    headers: { Origin: origin, Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(createSnapshot({ deviceId, deviceName, createdAt, appData }))
+  });
+  assert.equal((await upload('device-mac-test', 'Mac', '2026-08-16T01:00:00Z', {
+    focusSessions: [{ id: 'mac-session-old', date: '2026-08-16', duration: 25 }]
+  })).status, 201);
+  assert.equal((await upload('device-mac-test', 'Mac', '2026-08-16T02:00:00Z', {
+    focusSessions: [{ id: 'mac-session-new', date: '2026-08-16', duration: 50 }],
+    sessionReviews: [{ id: 'mac-review', sessionId: 'mac-session-new', date: '2026-08-16', result: '完成章节' }]
+  })).status, 201);
+  assert.equal((await upload('device-pad-test', '平板', '2026-08-16T03:00:00Z', {
+    dailyReviews: [{ id: 'pad-review', date: '2026-08-16', result: '整理错题' }]
+  })).status, 201);
+
+  const response = await fetch(`${f.baseUrl}/api/v1/aggregate`, { headers: { Origin: origin, Authorization: token } });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('access-control-allow-origin'), origin);
+  const aggregate = await response.json();
+  assert.equal(aggregate.devices.length, 2);
+  assert.deepEqual(aggregate.appData.focusSessions.map(item => item.id), ['mac-session-old', 'mac-session-new']);
+  assert.equal(aggregate.appData.sessionReviews[0].result, '完成章节');
+  assert.equal(aggregate.appData.dailyReviews[0].result, '整理错题');
 });
 
 test('same-device concurrent uploads keep every immutable archive indexed', async t => {

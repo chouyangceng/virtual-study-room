@@ -26,19 +26,19 @@ function sendJson(response, statusCode, value, extraHeaders) {
   response.end(body);
 }
 
-function allowedOrigin(request) {
+function allowedApiOrigin(request) {
   const origin = request.headers.origin;
   if (!origin) return null;
   if (origin === 'null') return 'null';
   try {
     const parsed = new URL(origin);
-    if (parsed.host === request.headers.host && (parsed.protocol === 'http:' || parsed.protocol === 'https:')) return origin;
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return origin;
   } catch (error) { /* reject invalid origin */ }
   return null;
 }
 
 function corsHeaders(request) {
-  const origin = allowedOrigin(request);
+  const origin = allowedApiOrigin(request);
   if (!origin) return {};
   return {
     'Access-Control-Allow-Origin': origin,
@@ -165,7 +165,10 @@ async function createArchiveServer(options) {
   const server = http.createServer(async (request, response) => {
     const cors = corsHeaders(request);
     if (request.method === 'OPTIONS') {
-      if (!allowedOrigin(request)) { sendJson(response, 403, { error: 'Origin 不允许' }); return; }
+      const requestedPath = String(request.url || '').split('?')[0];
+      if (!requestedPath.startsWith('/api/v1/') || requestedPath === '/api/v1/local-config' || !allowedApiOrigin(request)) {
+        sendJson(response, 403, { error: 'Origin 不允许' }); return;
+      }
       response.writeHead(204, cors);
       response.end();
       return;
@@ -198,6 +201,10 @@ async function createArchiveServer(options) {
         }
         if (pathname === '/api/v1/snapshots' && request.method === 'GET') {
           sendJson(response, 200, { snapshots: await store.listSnapshots() }, cors);
+          return;
+        }
+        if (pathname === '/api/v1/aggregate' && request.method === 'GET') {
+          sendJson(response, 200, await store.aggregateLatest(), cors);
           return;
         }
         const match = pathname.match(/^\/api\/v1\/snapshots\/([^/]+)\/([^/]+)$/);
@@ -242,4 +249,4 @@ async function createArchiveServer(options) {
   };
 }
 
-module.exports = { createArchiveServer, isLoopback, serviceUrls, hasTraversalAttempt, isAllowedStaticPath, staticSecurityHeaders, DEFAULT_PORT, DEFAULT_MAX_BODY_BYTES };
+module.exports = { createArchiveServer, isLoopback, serviceUrls, hasTraversalAttempt, isAllowedStaticPath, staticSecurityHeaders, allowedApiOrigin, DEFAULT_PORT, DEFAULT_MAX_BODY_BYTES };

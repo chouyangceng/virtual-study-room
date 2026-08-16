@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260816-3">
+  <link rel="stylesheet" href="css/style.css?v=20260816-9">
 </head>
 <body data-theme="light">
   <!-- Local Lucide icon subset (ISC; see icons/LUCIDE-LICENSE.txt). -->
@@ -311,11 +311,12 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content reviews-content glass-panel">
       <div class="modal-header">
-        <div><h2 id="reviews-title">复盘中心</h2><p class="modal-subtitle">记录事实、提炼问题、确定下一步，并沉淀为可查阅的历史</p></div>
+        <div><h2 id="reviews-title">学习档案与复盘中心</h2><p class="modal-subtitle">按日整合计时与复盘，跨设备归档到 Windows，并从事实生成每周报告</p></div>
         <button class="modal-close" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body review-center-body">
-        <div class="review-view-tabs" role="tablist" aria-label="复盘视图"><button class="review-view-tab active" type="button" role="tab" aria-selected="true" data-review-tab="today">今日复盘</button><button class="review-view-tab" type="button" role="tab" aria-selected="false" data-review-tab="history">过往复盘</button></div>
+        <div id="review-archive-status" class="review-archive-status" data-state="local" aria-live="polite"><strong>本机档案</strong><span>正在连接 Windows 数据中心…</span></div>
+        <div class="review-view-tabs" role="tablist" aria-label="复盘视图"><button class="review-view-tab active" type="button" role="tab" aria-selected="true" data-review-tab="today">今日整合</button><button class="review-view-tab" type="button" role="tab" aria-selected="false" data-review-tab="history">每日档案</button><button class="review-view-tab" type="button" role="tab" aria-selected="false" data-review-tab="weekly">每周报告</button></div>
         <section id="review-today-panel" class="review-view-panel" role="tabpanel">
           <div class="review-flow" aria-label="复盘流程"><div class="done"><span>1</span><strong>番茄专注</strong><small>选择任务并记录备注</small></div><div><span>2</span><strong>单次复盘</strong><small>番茄结束自动询问</small></div><div><span>3</span><strong>任务复盘</strong><small>完成任务时自动询问</small></div><div><span>4</span><strong>每日总结</strong><small>主动进入复盘中心</small></div></div>
           <div class="review-summary-cards"><div><strong id="review-summary-completed">0</strong><span>完成任务</span></div><div><strong id="review-summary-reviewed">0</strong><span>已复盘</span></div><div><strong id="review-summary-minutes">0</strong><span>专注分钟</span></div><div><strong id="review-summary-difficulty">—</strong><span>主要难度</span></div></div>
@@ -326,6 +327,28 @@
         <section id="review-history-panel" class="review-view-panel" role="tabpanel" hidden>
           <div class="review-history-toolbar"><div><strong>复盘日历</strong><small>过去日期查复盘，未来日期安排待办；方向键可快速切换日期</small></div><div class="review-calendar-nav"><button id="review-calendar-prev" class="icon-btn" type="button" aria-label="上个月"><svg class="lucide-icon"><use href="#i-chevron-left"/></svg></button><label class="review-month-picker"><span class="sr-only">选择月份</span><input id="review-calendar-month" type="month" aria-label="选择复盘月份"></label><button id="review-calendar-next" class="icon-btn" type="button" aria-label="下个月"><svg class="lucide-icon"><use href="#i-chevron-right"/></svg></button><button id="review-calendar-today" class="text-btn" type="button">今天</button></div></div>
           <div class="review-history-layout"><section class="review-calendar-card" aria-label="复盘日历"><div class="review-calendar-heading"><h3 id="review-calendar-title">—</h3><p id="review-calendar-summary" aria-live="polite">—</p></div><div class="review-calendar-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div id="review-calendar-grid" class="review-calendar-grid" role="grid" aria-label="按日期选择复盘"></div><div class="review-calendar-legend"><span><i class="is-today"></i>今天</span><span><i class="has-review"></i>有复盘</span><span><i class="has-todo"></i>有待办</span></div></section><article id="review-history-detail" class="review-history-detail" aria-live="polite"><div class="review-empty">选择过去日期查阅复盘，或选择未来日期添加待办。</div></article></div>
+        </section>
+        <section id="review-weekly-panel" class="review-view-panel weekly-review-panel" role="tabpanel" hidden>
+          <header class="weekly-review-toolbar">
+            <div><small>周学习档案</small><h3 id="weekly-range-title">—</h3><p id="weekly-data-source">汇总当前设备的计时与复盘内容</p></div>
+            <div class="weekly-nav"><button id="weekly-prev" class="secondary-btn compact" type="button">上一周</button><button id="weekly-current" class="text-btn" type="button">本周</button><button id="weekly-next" class="secondary-btn compact" type="button">下一周</button></div>
+          </header>
+          <div class="weekly-summary-cards" aria-label="本周学习摘要"><div><strong id="weekly-minutes">0</strong><span>专注分钟</span></div><div><strong id="weekly-sessions">0</strong><span>计时次数</span></div><div><strong id="weekly-review-count">0</strong><span>复盘条目</span></div><div><strong id="weekly-study-days">0</strong><span>学习天数</span></div></div>
+          <div class="weekly-review-layout">
+            <main class="weekly-report-main">
+              <div class="weekly-report-actions"><div><h4>周报正文</h4><p>先生成事实周报；配置 DeepSeek 后可基于同一批证据生成深度总结。</p></div><div><button id="btn-generate-weekly" class="secondary-btn" type="button">生成事实周报</button><button id="btn-ai-weekly" class="primary-btn" type="button">DeepSeek 深度总结</button></div></div>
+              <article id="weekly-report-output" class="weekly-report-output" aria-live="polite"><div class="review-empty">选择周次后生成周报。已有周报会自动显示。</div></article>
+              <div class="weekly-report-footer"><span id="weekly-report-status" aria-live="polite">尚未生成</span><div><button id="btn-download-weekly" class="text-btn" type="button" disabled>下载 Markdown</button><button id="btn-save-weekly" class="primary-btn compact" type="button" disabled>保存本周报告</button></div></div>
+            </main>
+            <aside class="weekly-api-panel" aria-labelledby="weekly-api-title">
+              <div><h4 id="weekly-api-title">DeepSeek 接入</h4><p>Key 只保存在当前设备，不会同步到 Windows；生成后的周报正文会进入归档。</p></div>
+              <label for="weekly-deepseek-endpoint">接口地址</label><input id="weekly-deepseek-endpoint" type="url" value="https://api.deepseek.com/chat/completions">
+              <label for="weekly-deepseek-model">模型</label><select id="weekly-deepseek-model"><option value="deepseek-chat">deepseek-chat</option><option value="deepseek-reasoner">deepseek-reasoner</option></select>
+              <label for="weekly-deepseek-api-key">API Key</label><div class="weekly-key-field"><input id="weekly-deepseek-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..."><button id="weekly-key-toggle" class="text-btn" type="button">显示</button></div>
+              <button id="btn-save-weekly-api" class="secondary-btn" type="button">保存 API 设置</button>
+              <p class="weekly-api-warning">建议使用设置了余额上限的 Key。若直连被浏览器跨域策略阻止，可填写你自己的 OpenAI 兼容代理地址。</p>
+            </aside>
+          </div>
         </section>
       </div>
     </div>
@@ -355,7 +378,7 @@
             <summary>API 接入设置</summary>
             <div class="api-settings-grid">
               <label>接口地址<input id="deepseek-endpoint" type="url" value="https://api.deepseek.com/chat/completions"></label>
-              <label>模型<select id="deepseek-model"><option value="deepseek-v4-pro">deepseek-v4-pro（深入分析）</option><option value="deepseek-v4-flash">deepseek-v4-flash（快速）</option></select></label>
+              <label>模型<select id="deepseek-model"><option value="deepseek-chat">deepseek-chat</option><option value="deepseek-reasoner">deepseek-reasoner</option></select></label>
               <label class="api-key-field">API Key<input id="deepseek-api-key" type="password" autocomplete="off" placeholder="sk-..."></label>
             </div>
             <div class="api-settings-footer"><p>⚠️ Key 仅保存在当前浏览器本地。纯网页直连接口仍可能暴露 Key，建议使用限额 Key；公开部署时请改用自己的后端代理。</p><button id="btn-save-deepseek-settings" class="text-btn" type="button">保存设置</button></div>
@@ -570,10 +593,10 @@
   <script src="js/tasks.js?v=20260816-3"></script>
   <script src="js/plans.js?v=20260816-5"></script>
   <script src="js/import-hub.js"></script>
-  <script src="shared/archive-core.js?v=20260816-5"></script>
-  <script src="js/sync.js?v=20260816-5"></script>
-  <script src="js/reviews.js?v=20260816-5"></script>
-  <script src="js/stats.js?v=20260816-5"></script>
+  <script src="shared/archive-core.js?v=20260816-9"></script>
+  <script src="js/sync.js?v=20260816-9"></script>
+  <script src="js/reviews.js?v=20260816-9"></script>
+  <script src="js/stats.js?v=20260816-9"></script>
   <script src="js/goals.js?v=20260816-5"></script>
   <script src="js/app.js?v=20260816-5"></script>
 </body>

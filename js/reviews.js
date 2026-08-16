@@ -6,7 +6,12 @@ const ReviewManager = {
   reviews: [],
   sessionReviews: [],
   dailyCloses: [],
+  weeklyReports: [],
   deepseekSettings: {},
+  archiveAggregate: null,
+  archiveDevices: [],
+  weekOffset: 0,
+  weeklyDraft: '',
   pendingTask: null,
   pendingSession: null,
   sessionReviewDone: null,
@@ -56,13 +61,32 @@ const ReviewManager = {
       if (!/^\d{4}-\d{2}$/.test(event.target.value)) return;
       this.selectCalendarMonth(`${event.target.value}-01`);
     });
+    document.getElementById('weekly-prev')?.addEventListener('click', () => { this.weekOffset -= 1; this.renderWeekly(); });
+    document.getElementById('weekly-next')?.addEventListener('click', () => { this.weekOffset += 1; this.renderWeekly(); });
+    document.getElementById('weekly-current')?.addEventListener('click', () => { this.weekOffset = 0; this.renderWeekly(); });
+    document.getElementById('btn-generate-weekly')?.addEventListener('click', () => this.generateWeeklyDraft());
+    document.getElementById('btn-ai-weekly')?.addEventListener('click', () => this.analyzeWeeklyWithDeepSeek());
+    document.getElementById('btn-save-weekly')?.addEventListener('click', () => this.saveWeeklyReport());
+    document.getElementById('btn-download-weekly')?.addEventListener('click', () => this.downloadWeeklyReport());
+    document.getElementById('btn-save-weekly-api')?.addEventListener('click', () => this.saveDeepseekSettings(false, 'weekly'));
+    document.getElementById('weekly-key-toggle')?.addEventListener('click', () => {
+      const input = document.getElementById('weekly-deepseek-api-key');
+      input.type = input.type === 'password' ? 'text' : 'password';
+      document.getElementById('weekly-key-toggle').textContent = input.type === 'password' ? '显示' : '隐藏';
+    });
     this.fillDeepseekSettings();
+    const view = new URLSearchParams(location.search);
+    if (view.get('view') === 'reviews') {
+      const tab = ['today', 'history', 'weekly'].includes(view.get('tab')) ? view.get('tab') : 'today';
+      setTimeout(() => this.openDaily(tab), 0);
+    }
   },
 
   load() {
     this.reviews = this.readArray('dailyReviews');
     this.sessionReviews = this.readArray('sessionReviews');
     this.dailyCloses = this.readArray('dailyCloseEntries');
+    this.weeklyReports = this.readArray('weeklyReports');
     try { this.deepseekSettings = JSON.parse(localStorage.getItem('deepseekSettings') || '{}') || {}; }
     catch (error) { this.deepseekSettings = {}; }
     if (!this.calendarMonth) this.calendarMonth = this.todayKey().slice(0, 7) + '-01';
@@ -73,6 +97,20 @@ const ReviewManager = {
       const value = JSON.parse(localStorage.getItem(key) || '[]');
       return Array.isArray(value) ? value : [];
     } catch (error) { return []; }
+  },
+
+  mergeRecords(localRecords, archivedRecords) {
+    const records = new Map();
+    const identity = record => typeof VsrArchiveCore !== 'undefined'
+      ? VsrArchiveCore.recordIdentity(record)
+      : `id:${String(record?.id || JSON.stringify(record))}`;
+    (Array.isArray(archivedRecords) ? archivedRecords : []).forEach(record => records.set(identity(record), record));
+    (Array.isArray(localRecords) ? localRecords : []).forEach(record => records.set(identity(record), { ...record, _archiveDeviceId: '', _archiveDeviceName: '' }));
+    return [...records.values()];
+  },
+
+  combinedArray(key, localRecords = this.readArray(key)) {
+    return this.mergeRecords(localRecords, this.archiveAggregate?.[key] || []);
   },
 
   save() {
@@ -104,7 +142,7 @@ const ReviewManager = {
   },
 
   getSessionsForDate(date) {
-    return this.readArray('focusSessions')
+    return this.combinedArray('focusSessions')
       .filter(session => session.date === date && (session.type || 'work') === 'work')
       .sort((a, b) => (Number(a.startedAt) || Number(a.timestamp) || 0) - (Number(b.startedAt) || Number(b.timestamp) || 0));
   },
@@ -114,9 +152,9 @@ const ReviewManager = {
   },
 
   getSessionReviewsForDate(date) {
-    const current = this.sessionReviews.filter(review => review.date === date);
-    const snapshot = this.getDayClose(date)?.sessionReviewsSnapshot;
-    const merged = new Map((Array.isArray(snapshot) ? snapshot : []).map(review => [review.sessionId || review.id, review]));
+    const current = this.combinedArray('sessionReviews', this.sessionReviews).filter(review => review.date === date);
+    const snapshots = this.getDayClosesForDate(date).flatMap(close => Array.isArray(close.sessionReviewsSnapshot) ? close.sessionReviewsSnapshot : []);
+    const merged = new Map(snapshots.map(review => [review.sessionId || review.id, review]));
     current.forEach(review => merged.set(review.sessionId || review.id, review));
     return [...merged.values()];
   },
@@ -199,11 +237,10 @@ const ReviewManager = {
   },
 
   getTodayTasks() {
-    if (typeof TaskManager === 'undefined') return [];
-    return TaskManager.getVisibleTasks().filter(task => task.completed);
+    return this.getTasksForDate(this.todayKey()).filter(task => task.completed);
   },
 
-  getTodayReviews() { return this.reviews.filter(review => review.date === this.todayKey()); },
+  getTodayReviews() { return this.getReviewsForDate(this.todayKey()); },
   getPendingTasks() {
     const reviewed = new Set(this.getTodayReviews().map(review => review.taskId));
     return this.getTodayTasks().filter(task => !reviewed.has(task.id));
@@ -328,6 +365,7 @@ const ReviewManager = {
     if (!document.getElementById('reviews-modal')?.classList.contains('active')) return;
     this.renderDaily();
     if (!document.getElementById('review-history-panel')?.hidden) this.renderHistory();
+    if (!document.getElementById('review-weekly-panel')?.hidden) this.renderWeekly();
   },
 
   openDaily(tab = 'today') {
@@ -335,18 +373,47 @@ const ReviewManager = {
     this.setReviewTab(tab);
     document.getElementById('reviews-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    this.refreshArchiveAggregate();
+  },
+
+  async refreshArchiveAggregate() {
+    const status = document.getElementById('review-archive-status');
+    const settings = typeof SyncManager !== 'undefined' ? SyncManager.getSettings() : null;
+    if (!settings?.serviceUrl || !settings?.token) {
+      status.dataset.state = 'local';
+      status.innerHTML = '<strong>本机档案</strong><span>尚未配置 Windows 地址与 token；当前仅显示本机计时和复盘。</span>';
+      return;
+    }
+    status.dataset.state = 'loading';
+    status.innerHTML = '<strong>Windows 数据中心</strong><span>正在读取各设备全部归档并去重…</span>';
+    try {
+      const aggregate = await SyncManager.fetchArchiveAggregate();
+      if (!aggregate) throw new Error('没有可读取的归档汇总');
+      this.archiveAggregate = aggregate.appData || {};
+      this.archiveDevices = aggregate.devices || [];
+      status.dataset.state = 'connected';
+      const names = this.archiveDevices.map(device => device.name || device.id).join('、');
+      status.innerHTML = `<strong>Windows 已汇总</strong><span>${this.archiveDevices.length} 台设备${names ? `：${this.escape(names)}` : ''}。计时与复盘已去重显示。</span>`;
+      this.renderDaily();
+      if (!document.getElementById('review-history-panel').hidden) this.renderHistory();
+      if (!document.getElementById('review-weekly-panel').hidden) this.renderWeekly();
+    } catch (error) {
+      status.dataset.state = 'error';
+      status.innerHTML = `<strong>当前显示本机档案</strong><span>Windows 汇总读取失败：${this.escape(error.message)}</span>`;
+    }
   },
 
   setReviewTab(tab = 'today') {
-    const isHistory = tab === 'history';
     document.querySelectorAll('[data-review-tab]').forEach(button => {
       const active = button.dataset.reviewTab === tab;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
     });
-    document.getElementById('review-today-panel').hidden = isHistory;
-    document.getElementById('review-history-panel').hidden = !isHistory;
-    if (isHistory) this.renderHistory();
+    document.getElementById('review-today-panel').hidden = tab !== 'today';
+    document.getElementById('review-history-panel').hidden = tab !== 'history';
+    document.getElementById('review-weekly-panel').hidden = tab !== 'weekly';
+    if (tab === 'history') this.renderHistory();
+    if (tab === 'weekly') this.renderWeekly();
   },
 
   closeDaily() {
@@ -367,6 +434,16 @@ const ReviewManager = {
   taskReviewContent(review) {
     if (!review) return '';
     return `${review.result ? `<p>${this.escape(review.result)}</p>` : ''}<div class="review-row-meta">${review.difficulty ? `<span>状态：${this.escape(review.difficulty)}</span>` : ''}${review.output ? `<span>产出：${this.escape(review.output)}</span>` : ''}${review.nextAction ? `<span>下一步：${this.escape(review.nextAction)}</span>` : ''}</div>`;
+  },
+
+  sourceText(record) {
+    return record?._archiveDeviceName ? ` · ${record._archiveDeviceName}` : '';
+  },
+
+  withoutArchiveSource(record) {
+    if (!record || typeof record !== 'object') return record;
+    const { _archiveDeviceId, _archiveDeviceName, ...clean } = record;
+    return clean;
   },
 
   renderDaily() {
@@ -392,24 +469,29 @@ const ReviewManager = {
     const list = document.getElementById('review-list');
     const groupedTaskIds = new Set([
       ...tasks.map(task => task.id),
-      ...sessions.map(session => session.taskId).filter(Boolean),
+      ...sessions.map(session => session.taskId || `session:${session.id}`),
       ...reviews.map(review => review.taskId).filter(Boolean),
     ]);
     const rows = [...groupedTaskIds].map(taskId => {
       const taskReview = reviews.find(review => review.taskId === taskId);
+      const standaloneSession = taskId.startsWith('session:') ? sessions.find(item => `session:${item.id}` === taskId) : null;
       const task = (typeof TaskManager !== 'undefined' ? TaskManager.getTaskById(taskId) : null)
         || tasks.find(item => item.id === taskId)
+        || (standaloneSession ? { id: taskId, text: standaloneSession.sessionName || standaloneSession.subjectName || '未命名专注', completed: false } : null)
         || { id: taskId, text: taskReview?.taskTitle || sessions.find(item => item.taskId === taskId)?.sessionName || '未命名任务', completed: Boolean(taskReview) };
-      const taskSessions = sessions.filter(session => session.taskId === taskId);
+      const taskSessions = standaloneSession ? [standaloneSession] : sessions.filter(session => session.taskId === taskId);
       const sessionRows = taskSessions.map((session, index) => {
         const review = sessionReviews.find(item => item.sessionId === session.id);
         const content = this.sessionReviewContent(review);
-        return `<article class="session-review-row" data-session-id="${this.escape(session.id)}" data-session-review-id="${this.escape(review?.id || '')}"><header><strong>番茄 ${index + 1}</strong><span>${Number(session.duration) || 0} 分钟</span></header>${session.sessionNote && !review?.sessionNote ? `<p><b>备注</b>${this.escape(session.sessionNote)}</p>` : ''}${content}<div class="session-review-actions"><button class="text-btn session-review-edit" type="button">${review ? '编辑单次复盘' : '补写单次复盘'}</button>${review ? '<button class="text-btn danger session-review-delete" type="button">删除复盘</button>' : ''}</div></article>`;
+        const actions = session._archiveDeviceId || review?._archiveDeviceId
+          ? '<div class="session-review-actions"><span>Windows 归档只读</span></div>'
+          : `<div class="session-review-actions"><button class="text-btn session-review-edit" type="button">${review ? '编辑单次复盘' : '补写单次复盘'}</button>${review ? '<button class="text-btn danger session-review-delete" type="button">删除复盘</button>' : ''}</div>`;
+        return `<article class="session-review-row" data-session-id="${this.escape(session.id)}" data-session-review-id="${this.escape(review?.id || '')}"><header><strong>番茄 ${index + 1}${this.escape(this.sourceText(session))}</strong><span>${Number(session.duration) || 0} 分钟</span></header>${session.sessionNote && !review?.sessionNote ? `<p><b>备注</b>${this.escape(session.sessionNote)}</p>` : ''}${content}${actions}</article>`;
       }).join('');
       const taskReviewBlock = taskReview
-        ? `<section class="task-review-block"><h5>任务完成复盘</h5>${this.taskReviewContent(taskReview)}<div class="review-row-actions"><button class="text-btn review-edit" type="button">编辑任务复盘</button><button class="text-btn danger review-delete" type="button">删除复盘</button></div></section>`
+        ? `<section class="task-review-block"><h5>任务完成复盘</h5>${this.taskReviewContent(taskReview)}${taskReview._archiveDeviceId ? '<div class="review-row-actions"><span>Windows 归档只读</span></div>' : '<div class="review-row-actions"><button class="text-btn review-edit" type="button">编辑任务复盘</button><button class="text-btn danger review-delete" type="button">删除复盘</button></div>'}</section>`
         : task.completed ? '<button class="review-fill" type="button">补写任务完成复盘</button>' : '';
-      return `<article class="review-row" data-task-id="${this.escape(task.id)}" data-review-id="${this.escape(taskReview?.id || '')}"><div class="review-row-title"><strong>${this.escape(task.text)}</strong><span>${task.completed ? '任务已完成' : '专注进行中'}</span></div><div class="review-row-meta"><span>${taskSessions.length} 个番茄</span><span>${taskSessions.reduce((sum, item) => sum + (Number(item.duration) || 0), 0)} 分钟</span></div><div class="session-review-list">${sessionRows}</div>${taskReviewBlock}</article>`;
+      return `<article class="review-row" data-task-id="${this.escape(task.id)}" data-review-id="${this.escape(taskReview?.id || '')}"><div class="review-row-title"><strong>${this.escape(task.text)}${this.escape(this.sourceText(taskReview || task))}</strong><span>${task.completed ? '任务已完成' : '专注进行中'}</span></div><div class="review-row-meta"><span>${taskSessions.length} 个番茄</span><span>${taskSessions.reduce((sum, item) => sum + (Number(item.duration) || 0), 0)} 分钟</span></div><div class="session-review-list">${sessionRows}</div>${taskReviewBlock}</article>`;
     }).join('');
     list.innerHTML = rows || '<div class="review-empty">完成一次专注后，这里会按任务整合番茄记录。</div>';
     this.bindDailyReviewActions(list, tasks, sessions, reviews);
@@ -433,6 +515,32 @@ const ReviewManager = {
   },
 
   getDayClose(date = this.todayKey()) { return this.dailyCloses.find(item => item.date === date); },
+
+  getDayClosesForDate(date = this.todayKey()) {
+    return this.combinedArray('dailyCloseEntries', this.dailyCloses).filter(item => item.date === date);
+  },
+
+  combineDayCloses(date) {
+    const closes = this.getDayClosesForDate(date);
+    if (!closes.length) return {};
+    const labelText = (entry, field) => {
+      const text = String(entry[field] || '').trim();
+      if (!text) return '';
+      const source = entry._archiveDeviceName ? `${entry._archiveDeviceName}：` : '';
+      return `${source}${text}`;
+    };
+    return {
+      ...closes[0],
+      date,
+      selfReview: closes.map(entry => labelText(entry, 'selfReview')).filter(Boolean).join('\n\n'),
+      tomorrowTasks: closes.map(entry => labelText(entry, 'tomorrowTasks')).filter(Boolean).join('\n\n'),
+      aiAnalysis: closes.map(entry => labelText(entry, 'aiAnalysis')).filter(Boolean).join('\n\n'),
+      tasksSnapshot: this.mergeRecords([], closes.flatMap(entry => Array.isArray(entry.tasksSnapshot) ? entry.tasksSnapshot : [])),
+      sessionsSnapshot: this.mergeRecords([], closes.flatMap(entry => Array.isArray(entry.sessionsSnapshot) ? entry.sessionsSnapshot : [])),
+      reviewsSnapshot: this.mergeRecords([], closes.flatMap(entry => Array.isArray(entry.reviewsSnapshot) ? entry.reviewsSnapshot : [])),
+      sessionReviewsSnapshot: this.mergeRecords([], closes.flatMap(entry => Array.isArray(entry.sessionReviewsSnapshot) ? entry.sessionReviewsSnapshot : [])),
+    };
+  },
 
   openDayClose(automatic = false) {
     this.closeDaily();
@@ -459,9 +567,17 @@ const ReviewManager = {
     const taskReviews = this.getTodayReviews();
     const sessionReviews = this.getSessionReviewsForDate(this.todayKey());
     const minutes = sessions.reduce((sum, session) => sum + (Number(session.duration) || 0), 0);
-    const rows = tasks.map(task => {
-      const taskSessions = sessions.filter(session => session.taskId === task.id);
-      const taskReview = taskReviews.find(item => item.taskId === task.id);
+    const groupIds = new Set([
+      ...tasks.map(task => task.id),
+      ...sessions.map(session => session.taskId || `session:${session.id}`),
+      ...taskReviews.map(review => review.taskId).filter(Boolean),
+    ]);
+    const rows = [...groupIds].map(groupId => {
+      const standalone = groupId.startsWith('session:') ? sessions.find(session => `session:${session.id}` === groupId) : null;
+      const task = tasks.find(item => item.id === groupId)
+        || { id: groupId, text: standalone?.sessionName || taskReviews.find(item => item.taskId === groupId)?.taskTitle || '未命名专注' };
+      const taskSessions = standalone ? [standalone] : sessions.filter(session => session.taskId === groupId);
+      const taskReview = taskReviews.find(item => item.taskId === groupId);
       const sessionDetails = taskSessions.map((session, index) => {
         const review = sessionReviews.find(item => item.sessionId === session.id);
         const optional = [session.sessionNote || review?.sessionNote, review?.result, review?.nextAction].filter(this.hasText).map(value => `<small>${this.escape(value)}</small>`).join('');
@@ -486,10 +602,10 @@ const ReviewManager = {
       aiAnalysis: /^尚未分析/.test(aiText) ? '' : aiText,
       focusMinutes: this.getTodayFocusMinutes(),
       completedTaskCount: this.getTodayTasks().length,
-      tasksSnapshot: this.getTodayTasks().map(task => ({ ...task })),
-      sessionsSnapshot: this.getSessionsForDate(date),
-      reviewsSnapshot: this.getTodayReviews(),
-      sessionReviewsSnapshot: this.getSessionReviewsForDate(date),
+      tasksSnapshot: this.getTodayTasks().map(task => this.withoutArchiveSource(task)),
+      sessionsSnapshot: this.getSessionsForDate(date).map(session => this.withoutArchiveSource(session)),
+      reviewsSnapshot: this.getTodayReviews().map(review => this.withoutArchiveSource(review)),
+      sessionReviewsSnapshot: this.getSessionReviewsForDate(date).map(review => this.withoutArchiveSource(review)),
       createdAt: existing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -507,18 +623,26 @@ const ReviewManager = {
   },
 
   fillDeepseekSettings() {
-    document.getElementById('deepseek-endpoint').value = this.deepseekSettings.endpoint || 'https://api.deepseek.com/chat/completions';
-    document.getElementById('deepseek-model').value = this.deepseekSettings.model || 'deepseek-v4-pro';
-    document.getElementById('deepseek-api-key').value = this.deepseekSettings.apiKey || '';
+    const endpoint = this.deepseekSettings.endpoint || 'https://api.deepseek.com/chat/completions';
+    const model = ['deepseek-chat', 'deepseek-reasoner'].includes(this.deepseekSettings.model) ? this.deepseekSettings.model : 'deepseek-chat';
+    const apiKey = this.deepseekSettings.apiKey || '';
+    document.getElementById('deepseek-endpoint').value = endpoint;
+    document.getElementById('deepseek-model').value = model;
+    document.getElementById('deepseek-api-key').value = apiKey;
+    document.getElementById('weekly-deepseek-endpoint').value = endpoint;
+    document.getElementById('weekly-deepseek-model').value = model;
+    document.getElementById('weekly-deepseek-api-key').value = apiKey;
   },
 
-  saveDeepseekSettings(silent = false) {
+  saveDeepseekSettings(silent = false, source = 'daily') {
+    const weekly = source === 'weekly';
     this.deepseekSettings = {
-      endpoint: document.getElementById('deepseek-endpoint').value.trim() || 'https://api.deepseek.com/chat/completions',
-      model: document.getElementById('deepseek-model').value,
-      apiKey: document.getElementById('deepseek-api-key').value.trim(),
+      endpoint: document.getElementById(weekly ? 'weekly-deepseek-endpoint' : 'deepseek-endpoint').value.trim() || 'https://api.deepseek.com/chat/completions',
+      model: document.getElementById(weekly ? 'weekly-deepseek-model' : 'deepseek-model').value || 'deepseek-chat',
+      apiKey: document.getElementById(weekly ? 'weekly-deepseek-api-key' : 'deepseek-api-key').value.trim(),
     };
     SafeStore.set('deepseekSettings', JSON.stringify(this.deepseekSettings));
+    this.fillDeepseekSettings();
     if (!silent && typeof App !== 'undefined') App.showToast('API 设置已保存在当前浏览器');
     return this.deepseekSettings;
   },
@@ -552,7 +676,7 @@ const ReviewManager = {
     button.textContent = '正在审查…';
     output.textContent = '正在逐条核对任务、番茄记录、备注和行动漏洞…';
     try {
-      const response = await fetch(settings.endpoint, {
+      const response = await fetch(this.validateAiEndpoint(settings.endpoint), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.apiKey}` },
         body: JSON.stringify({
@@ -579,19 +703,22 @@ const ReviewManager = {
   },
 
   getReviewsForDate(date) {
-    const current = this.reviews.filter(review => review.date === date);
-    const snapshot = this.getDayClose(date)?.reviewsSnapshot;
-    const merged = new Map((Array.isArray(snapshot) ? snapshot : []).map(review => [review.taskId || review.id, review]));
+    const current = this.combinedArray('dailyReviews', this.reviews).filter(review => review.date === date);
+    const snapshots = this.getDayClosesForDate(date).flatMap(close => Array.isArray(close.reviewsSnapshot) ? close.reviewsSnapshot : []);
+    const merged = new Map(snapshots.map(review => [review.taskId || review.id, review]));
     current.forEach(review => merged.set(review.taskId || review.id, review));
     return [...merged.values()];
   },
 
   getTasksForDate(date) {
-    const snapshot = this.getDayClose(date)?.tasksSnapshot;
-    if (Array.isArray(snapshot) && snapshot.length) return snapshot;
-    if (typeof TaskManager === 'undefined') return [];
-    if (date === this.todayKey()) return TaskManager.getVisibleTasks();
-    return TaskManager.tasks.filter(task => task.kind !== 'habit' && task.date === date);
+    const snapshots = this.getDayClosesForDate(date).flatMap(close => Array.isArray(close.tasksSnapshot) ? close.tasksSnapshot : []);
+    let local = [];
+    if (typeof TaskManager !== 'undefined') {
+      local = date === this.todayKey()
+        ? TaskManager.getVisibleTasks()
+        : TaskManager.tasks.filter(task => task.kind !== 'habit' && task.date === date);
+    }
+    return this.mergeRecords(local, snapshots);
   },
 
   getFocusMinutesForDate(date) {
@@ -607,7 +734,10 @@ const ReviewManager = {
       ...this.reviews.map(review => review.date),
       ...this.sessionReviews.map(review => review.date),
       ...this.dailyCloses.map(entry => entry.date),
-      ...this.readArray('focusSessions').map(session => session.date),
+      ...this.combinedArray('focusSessions').map(session => session.date),
+      ...this.combinedArray('dailyReviews', this.reviews).map(review => review.date),
+      ...this.combinedArray('sessionReviews', this.sessionReviews).map(review => review.date),
+      ...this.combinedArray('dailyCloseEntries', this.dailyCloses).map(entry => entry.date),
     ].filter(Boolean));
     return dates;
   },
@@ -711,7 +841,7 @@ const ReviewManager = {
   renderHistoryDetail(date) {
     if (date > this.todayKey()) { this.renderFutureTodoEditor(date); return; }
     const target = document.getElementById('review-history-detail');
-    const close = this.getDayClose(date) || {};
+    const close = this.combineDayCloses(date);
     const reviews = this.getReviewsForDate(date);
     const sessionReviews = this.getSessionReviewsForDate(date);
     const sessions = this.getSessionsForDate(date).length ? this.getSessionsForDate(date) : (Array.isArray(close.sessionsSnapshot) ? close.sessionsSnapshot : []);
@@ -724,9 +854,12 @@ const ReviewManager = {
     const sessionRows = sessions.map((session, index) => {
       const review = sessionReviews.find(item => item.sessionId === session.id);
       const details = this.sessionReviewContent(review);
-      return `<article class="review-history-task" data-session-id="${this.escape(session.id)}"><div><strong>${this.escape(session.sessionName || `番茄 ${index + 1}`)}</strong><span>${Number(session.duration) || 0} 分钟</span></div>${session.sessionNote && !review?.sessionNote ? `<p>${this.escape(session.sessionNote)}</p>` : ''}${details}<div class="session-review-actions"><button class="text-btn history-session-edit" type="button">${review ? '修改单次复盘' : '补写单次复盘'}</button></div></article>`;
+      const actions = session._archiveDeviceId || review?._archiveDeviceId
+        ? '<div class="session-review-actions"><span>Windows 归档只读</span></div>'
+        : `<div class="session-review-actions"><button class="text-btn history-session-edit" type="button">${review ? '修改单次复盘' : '补写单次复盘'}</button></div>`;
+      return `<article class="review-history-task" data-session-id="${this.escape(session.id)}"><div><strong>${this.escape(session.sessionName || `番茄 ${index + 1}`)}${this.escape(this.sourceText(session))}</strong><span>${Number(session.duration) || 0} 分钟</span></div>${session.sessionNote && !review?.sessionNote ? `<p>${this.escape(session.sessionNote)}</p>` : ''}${details}${actions}</article>`;
     }).join('');
-    const taskRows = reviews.map(review => `<article class="review-history-task" data-task-id="${this.escape(review.taskId)}"><div><strong>${this.escape(review.taskTitle || '未命名任务')}</strong>${review.difficulty ? `<span>${this.escape(review.difficulty)}</span>` : ''}</div>${review.result ? `<p>${this.escape(review.result)}</p>` : ''}${review.output ? `<small>产出：${this.escape(review.output)}</small>` : ''}${review.nextAction ? `<small>下一步：${this.escape(review.nextAction)}</small>` : ''}<div class="review-row-actions"><button class="text-btn history-task-edit" type="button">修改任务复盘</button></div></article>`).join('');
+    const taskRows = reviews.map(review => `<article class="review-history-task" data-task-id="${this.escape(review.taskId)}"><div><strong>${this.escape(review.taskTitle || '未命名任务')}${this.escape(this.sourceText(review))}</strong>${review.difficulty ? `<span>${this.escape(review.difficulty)}</span>` : ''}</div>${review.result ? `<p>${this.escape(review.result)}</p>` : ''}${review.output ? `<small>产出：${this.escape(review.output)}</small>` : ''}${review.nextAction ? `<small>下一步：${this.escape(review.nextAction)}</small>` : ''}${review._archiveDeviceId ? '<div class="review-row-actions"><span>Windows 归档只读</span></div>' : '<div class="review-row-actions"><button class="text-btn history-task-edit" type="button">修改任务复盘</button></div>'}</article>`).join('');
     const sections = [
       close.selfReview ? `<section><h4>一日复盘</h4><p>${this.escape(close.selfReview)}</p></section>` : '',
       close.tomorrowTasks ? `<section><h4>次日提醒</h4><p>${this.escape(close.tomorrowTasks)}</p></section>` : '',
@@ -773,6 +906,260 @@ const ReviewManager = {
     const counts = {};
     reviews.forEach(review => { if (review.difficulty) counts[review.difficulty] = (counts[review.difficulty] || 0) + 1; });
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+  },
+
+  weekRange(offset = this.weekOffset) {
+    const today = this.dateFromKey(this.todayKey());
+    const weekday = (today.getDay() + 6) % 7;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - weekday + offset * 7);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return { start: this.calendarKey(monday), end: this.calendarKey(sunday) };
+  },
+
+  datesInRange(start, end) {
+    const dates = [];
+    for (let date = start; date <= end; date = this.shiftDateKey(date, 1)) dates.push(date);
+    return dates;
+  },
+
+  collectWeeklyData() {
+    const range = this.weekRange();
+    const days = this.datesInRange(range.start, range.end).map(date => {
+      const sessions = this.getSessionsForDate(date);
+      const taskReviews = this.getReviewsForDate(date);
+      const sessionReviews = this.getSessionReviewsForDate(date);
+      const tasks = this.getTasksForDate(date).filter(task => task.completed);
+      const close = this.combineDayCloses(date);
+      return {
+        date, sessions, taskReviews, sessionReviews, tasks, close,
+        minutes: sessions.reduce((sum, session) => sum + Math.max(0, Number(session.duration) || 0), 0),
+      };
+    });
+    const sessions = days.flatMap(day => day.sessions);
+    const taskReviews = days.flatMap(day => day.taskReviews);
+    const sessionReviews = days.flatMap(day => day.sessionReviews);
+    const completedTasks = this.mergeRecords([], days.flatMap(day => day.tasks));
+    const studyDays = days.filter(day => day.minutes || day.taskReviews.length || day.sessionReviews.length || day.close.selfReview).length;
+    const subjects = new Map();
+    sessions.forEach(session => {
+      const name = session.subjectName || session.categoryPath || session.sessionName || '未分类';
+      const current = subjects.get(name) || { minutes: 0, sessions: 0 };
+      current.minutes += Math.max(0, Number(session.duration) || 0);
+      current.sessions += 1;
+      subjects.set(name, current);
+    });
+    return {
+      ...range, days, sessions, taskReviews, sessionReviews, completedTasks, studyDays,
+      minutes: sessions.reduce((sum, session) => sum + Math.max(0, Number(session.duration) || 0), 0),
+      reviewCount: taskReviews.length + sessionReviews.length + days.filter(day => day.close.selfReview).length,
+      subjects: [...subjects.entries()].sort((left, right) => right[1].minutes - left[1].minutes),
+      devices: this.archiveDevices.map(device => device.name || device.id),
+    };
+  },
+
+  buildWeeklyMarkdown(data = this.collectWeeklyData()) {
+    const lines = [
+      `# 学习周报 · ${data.start} ~ ${data.end}`,
+      '',
+      `> 生成于 ${new Date().toLocaleString('zh-CN')} · ${data.devices.length ? `Windows 汇总设备：${data.devices.join('、')}` : '当前设备本地汇总'}`,
+      '',
+      '## 本周总览',
+      '',
+      `- 专注时长：${data.minutes} 分钟（${(data.minutes / 60).toFixed(1)} 小时）`,
+      `- 计时次数：${data.sessions.length} 次`,
+      `- 学习天数：${data.studyDays} 天`,
+      `- 完成任务：${data.completedTasks.length} 项`,
+      `- 复盘条目：${data.reviewCount} 条`,
+      '',
+      '## 每日学习事实',
+      '',
+      '| 日期 | 专注分钟 | 计时 | 完成任务 | 复盘 |',
+      '|---|---:|---:|---:|---:|',
+      ...data.days.map(day => `| ${day.date} | ${day.minutes} | ${day.sessions.length} | ${day.tasks.length} | ${day.taskReviews.length + day.sessionReviews.length + (day.close.selfReview ? 1 : 0)} |`),
+    ];
+    if (data.subjects.length) {
+      lines.push('', '## 时间去向', '');
+      data.subjects.forEach(([name, value]) => lines.push(`- ${name}：${value.minutes} 分钟，${value.sessions} 次计时`));
+    }
+    const evidenceDays = data.days.filter(day => day.sessions.length || day.taskReviews.length || day.sessionReviews.length || day.close.selfReview || day.close.aiAnalysis);
+    lines.push('', '## 每日复盘整合');
+    if (!evidenceDays.length) lines.push('', '- 本周尚无可读复盘内容。');
+    evidenceDays.forEach(day => {
+      lines.push('', `### ${day.date}`);
+      day.sessionReviews.forEach(review => {
+        const facts = [review.result, review.difficulty && `状态：${review.difficulty}`, review.nextAction && `接续：${review.nextAction}`].filter(Boolean).join('；');
+        if (facts) lines.push(`- 单次复盘｜${review.taskTitle || '未命名专注'}：${facts}`);
+      });
+      day.taskReviews.forEach(review => {
+        const facts = [review.result, review.output && `产出：${review.output}`, review.difficulty && `状态：${review.difficulty}`, review.nextAction && `下一步：${review.nextAction}`].filter(Boolean).join('；');
+        if (facts) lines.push(`- 任务复盘｜${review.taskTitle || '未命名任务'}：${facts}`);
+      });
+      if (day.close.selfReview) lines.push(`- 每日总结：${String(day.close.selfReview).replace(/\s+/g, ' ').trim()}`);
+      if (day.close.aiAnalysis) lines.push(`- 当日 AI 点评：${String(day.close.aiAnalysis).replace(/\s+/g, ' ').trim()}`);
+    });
+    const nextActions = [...new Set([
+      ...data.sessionReviews.map(review => review.nextAction),
+      ...data.taskReviews.map(review => review.nextAction),
+      ...data.days.flatMap(day => String(day.close.tomorrowTasks || '').split(/\r?\n/)),
+    ].map(value => String(value || '').trim()).filter(Boolean))];
+    lines.push('', '## 下周行动线索', '');
+    if (!nextActions.length) lines.push('- 尚未记录明确的下一步。');
+    else nextActions.slice(0, 12).forEach(action => lines.push(`- ${action}`));
+    return lines.join('\n');
+  },
+
+  getWeeklyReport(weekStart) {
+    const records = this.combinedArray('weeklyReports', this.weeklyReports);
+    return records
+      .filter(report => report.weekStart === weekStart)
+      .sort((left, right) => String(right.updatedAt || right.createdAt || '').localeCompare(String(left.updatedAt || left.createdAt || '')))[0] || null;
+  },
+
+  renderWeekly() {
+    const data = this.collectWeeklyData();
+    document.getElementById('weekly-range-title').textContent = `${data.start} 至 ${data.end}`;
+    document.getElementById('weekly-data-source').textContent = data.devices.length
+      ? `来自 Windows 数据中心：${data.devices.join('、')}`
+      : '当前仅汇总本机计时与复盘内容';
+    document.getElementById('weekly-minutes').textContent = data.minutes;
+    document.getElementById('weekly-sessions').textContent = data.sessions.length;
+    document.getElementById('weekly-review-count').textContent = data.reviewCount;
+    document.getElementById('weekly-study-days').textContent = data.studyDays;
+    const next = document.getElementById('weekly-next');
+    next.disabled = this.weekOffset >= 0;
+    if (this.weeklyDraftWeek !== data.start) {
+      const saved = this.getWeeklyReport(data.start);
+      this.weeklyDraftWeek = data.start;
+      this.weeklyDraft = saved?.content || '';
+      this.renderWeeklyContent(this.weeklyDraft);
+      document.getElementById('weekly-report-status').textContent = saved
+        ? `已保存于 ${new Date(saved.updatedAt || saved.createdAt).toLocaleString()}`
+        : '尚未生成';
+    }
+    const ready = Boolean(this.weeklyDraft);
+    document.getElementById('btn-save-weekly').disabled = !ready;
+    document.getElementById('btn-download-weekly').disabled = !ready;
+  },
+
+  renderWeeklyContent(markdown) {
+    const target = document.getElementById('weekly-report-output');
+    if (!markdown) {
+      target.innerHTML = '<div class="review-empty">本周还没有周报。点击“生成事实周报”即可先得到不依赖 AI 的完整汇总。</div>';
+      return;
+    }
+    const lines = String(markdown).split(/\r?\n/);
+    const html = [];
+    let table = [];
+    const flushTable = () => {
+      if (!table.length) return;
+      html.push(`<pre>${this.escape(table.join('\n'))}</pre>`);
+      table = [];
+    };
+    lines.forEach(line => {
+      if (line.startsWith('|')) { table.push(line); return; }
+      flushTable();
+      if (line.startsWith('### ')) html.push(`<h3>${this.escape(line.slice(4))}</h3>`);
+      else if (line.startsWith('## ')) html.push(`<h2>${this.escape(line.slice(3))}</h2>`);
+      else if (line.startsWith('# ')) html.push(`<h1>${this.escape(line.slice(2))}</h1>`);
+      else if (line.startsWith('- ')) html.push(`<p>• ${this.escape(line.slice(2))}</p>`);
+      else if (line.startsWith('> ')) html.push(`<p>${this.escape(line.slice(2))}</p>`);
+      else if (line.trim()) html.push(`<p>${this.escape(line)}</p>`);
+    });
+    flushTable();
+    target.innerHTML = html.join('');
+  },
+
+  generateWeeklyDraft() {
+    const data = this.collectWeeklyData();
+    this.weeklyDraftWeek = data.start;
+    this.weeklyDraft = this.buildWeeklyMarkdown(data);
+    this.renderWeeklyContent(this.weeklyDraft);
+    document.getElementById('weekly-report-status').textContent = '事实周报已生成，尚未保存';
+    document.getElementById('btn-save-weekly').disabled = false;
+    document.getElementById('btn-download-weekly').disabled = false;
+  },
+
+  validateAiEndpoint(value) {
+    const url = new URL(value);
+    const local = ['127.0.0.1', 'localhost', '::1'].includes(url.hostname);
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && local)) throw new Error('API Key 只能发送到 HTTPS 地址或本机代理');
+    return url.toString();
+  },
+
+  async analyzeWeeklyWithDeepSeek() {
+    const settings = this.saveDeepseekSettings(true, 'weekly');
+    const button = document.getElementById('btn-ai-weekly');
+    const status = document.getElementById('weekly-report-status');
+    if (!settings.apiKey) {
+      status.textContent = '请先填写并保存 DeepSeek API Key。';
+      document.getElementById('weekly-deepseek-api-key').focus();
+      return;
+    }
+    if (!this.weeklyDraft || this.weeklyDraftWeek !== this.weekRange().start) this.generateWeeklyDraft();
+    const baseReport = this.weeklyDraft.replace(/\n## DeepSeek 深度总结[\s\S]*$/, '');
+    button.disabled = true;
+    button.textContent = '正在生成…';
+    status.textContent = 'DeepSeek 正在核对学习时间、每日事实、困难和下一步…';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    try {
+      const endpoint = this.validateAiEndpoint(settings.endpoint);
+      const response = await fetch(endpoint, {
+        method: 'POST', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${settings.apiKey}` },
+        body: JSON.stringify({
+          model: settings.model || 'deepseek-chat', stream: false,
+          messages: [
+            { role: 'system', content: '你是严谨的学习周报分析师。只根据给定证据写中文总结，不虚构。输出四部分：1.本周关键进展；2.时间投入与结果是否匹配；3.反复出现的困难或低效模式；4.下周最多五项可量化行动。引用具体日期、分钟或复盘事实。' },
+            { role: 'user', content: baseReport },
+          ],
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error?.message || `接口返回 ${response.status}`);
+      const content = data.choices?.[0]?.message?.content?.trim();
+      if (!content) throw new Error('接口未返回周报总结');
+      this.weeklyDraft = `${baseReport}\n\n## DeepSeek 深度总结\n\n${content}`;
+      this.renderWeeklyContent(this.weeklyDraft);
+      status.textContent = 'DeepSeek 深度总结已生成，尚未保存';
+      document.getElementById('btn-save-weekly').disabled = false;
+      document.getElementById('btn-download-weekly').disabled = false;
+    } catch (error) {
+      status.textContent = `生成失败：${error.name === 'AbortError' ? '请求超过 60 秒' : error.message}`;
+    } finally {
+      clearTimeout(timeout);
+      button.disabled = false;
+      button.textContent = 'DeepSeek 深度总结';
+    }
+  },
+
+  saveWeeklyReport() {
+    if (!this.weeklyDraft) return;
+    const data = this.collectWeeklyData();
+    const existing = this.weeklyReports.find(report => report.weekStart === data.start);
+    const report = {
+      id: existing?.id || `weekly-report-${data.start}`,
+      weekStart: data.start,
+      weekEnd: data.end,
+      content: this.weeklyDraft,
+      metrics: { minutes: data.minutes, sessions: data.sessions.length, reviews: data.reviewCount, studyDays: data.studyDays },
+      sourceDevices: data.devices,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.weeklyReports = [report, ...this.weeklyReports.filter(item => item.weekStart !== data.start)];
+    SafeStore.set('weeklyReports', JSON.stringify(this.weeklyReports));
+    document.getElementById('weekly-report-status').textContent = `已保存于 ${new Date(report.updatedAt).toLocaleString()}`;
+    if (typeof SyncManager !== 'undefined') SyncManager.scheduleUpload('weekly-report', 500);
+    if (typeof App !== 'undefined') App.showToast('周报已保存，并将同步到 Windows 数据中心');
+  },
+
+  downloadWeeklyReport() {
+    if (!this.weeklyDraft) return;
+    const range = this.weekRange();
+    this.download(this.weeklyDraft, 'text/markdown;charset=utf-8', `学习周报-${range.start}-${range.end}.md`);
   },
 
   buildMarkdown(entry = this.getDayClose() || {}) {

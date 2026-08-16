@@ -10,7 +10,7 @@
   const DEVICE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._-]{7,127}$/;
   const ARCHIVE_KEYS = [
     'focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings',
-    'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries',
+    'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports',
     'dailyData', 'appSettings', 'deepseekSettings',
     'currentStudyGoal', 'dayClosePromptedDate'
   ];
@@ -156,6 +156,50 @@
       }
     }
     return null;
+  }
+
+  function mergeArchiveAppData(entries) {
+    const sources = Array.isArray(entries) ? entries : [];
+    const arrayKeys = ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports'];
+    const maps = Object.fromEntries(arrayKeys.map(key => [key, new Map()]));
+    const devices = new Map();
+    sources
+      .filter(entry => entry && entry.snapshot && validateSnapshot(entry.snapshot, { allowOlder: true }).ok)
+      .sort((left, right) => String(left.snapshot.createdAt).localeCompare(String(right.snapshot.createdAt)))
+      .forEach(entry => {
+        const snapshot = entry.snapshot;
+        const device = {
+          id: snapshot.device.id,
+          name: snapshot.device.name,
+          createdAt: snapshot.createdAt,
+          storedAt: entry.receipt && entry.receipt.storedAt || snapshot.createdAt,
+        };
+        devices.set(device.id, device);
+        const appData = sanitizeAppData(snapshot.appData);
+        arrayKeys.forEach(key => {
+          const records = Array.isArray(appData[key]) ? appData[key] : [];
+          records.forEach(record => {
+            if (!record || typeof record !== 'object') return;
+            const identity = recordIdentity(record);
+            if (!identity) return;
+            maps[key].set(identity, {
+              ...clone(record),
+              _archiveDeviceId: device.id,
+              _archiveDeviceName: device.name,
+            });
+          });
+        });
+      });
+    const appData = {};
+    arrayKeys.forEach(key => {
+      appData[key] = [...maps[key].values()].sort((left, right) => {
+        const dateOrder = String(recordDate(left) || '').localeCompare(String(recordDate(right) || ''));
+        if (dateOrder) return dateOrder;
+        return (Number(left.startedAt) || Number(left.timestamp) || Number(left.createdAt) || 0)
+          - (Number(right.startedAt) || Number(right.timestamp) || Number(right.createdAt) || 0);
+      });
+    });
+    return { devices: [...devices.values()], appData };
   }
 
   function isOlderThan(dateString, cutoffDate) {
@@ -353,6 +397,7 @@
     recordIdentity,
     recordDate,
     cleanArchivedHistory,
-    removeSessionRecords
+    removeSessionRecords,
+    mergeArchiveAppData
   };
 });
