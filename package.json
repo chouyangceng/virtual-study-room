@@ -64,7 +64,10 @@
         }
       ],
       "category": "public.app-category.productivity",
-      "icon": "icons/icon-512.png"
+      "icon": "icons/icon-512.png",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "用于连接您的 Windows 归档终端并同步计时与复盘数据。"
+      }
     }
   },
   "devDependencies": {

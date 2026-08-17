@@ -6,6 +6,7 @@ const { fileURLToPath } = require('url');
 
 let archiveService = null;
 app.setName('虚拟自习室');
+app.commandLine.appendSwitch('proxy-bypass-list', '<local>;127.*;10.*;100.*;192.168.*;172.16.*;172.17.*;172.18.*;172.19.*;172.2*;172.30.*;172.31.*');
 
 function configuredDataRoot() {
   const argument = process.argv.find(value => String(value).startsWith('--vsr-data-root='));
