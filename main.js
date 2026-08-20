@@ -29,6 +29,9 @@ async function startArchiveServiceIfNeeded() {
 
 async function createWindow() {
   const isMac = process.platform === 'darwin';
+  const windowIcon = process.platform === 'win32'
+    ? path.join(__dirname, 'icons', 'app-icon-v2.ico')
+    : path.join(__dirname, 'icons', 'icon-512.png');
   const win = new BrowserWindow({
     width: 1440,
     height: 920,
@@ -36,7 +39,7 @@ async function createWindow() {
     minHeight: isMac ? 600 : 680,
     backgroundColor: '#2d2d3f',
     autoHideMenuBar: true,
-    icon: path.join(__dirname, 'build', 'icon.png'),
+    icon: windowIcon,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

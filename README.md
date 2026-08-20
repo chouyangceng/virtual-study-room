@@ -58,6 +58,14 @@ npm run build:single
 npm run dist:win
 ```
 
+macOS 本地构建：
+
+```bash
+npm run dist:mac:arm64
+```
+
+仓库的 GitHub Actions 会在每次推送和拉取请求中执行语法检查、自动测试，并确认单文件版已经由当前模块源码重新生成。PWA 缓存仅清理 `virtual-study-room-` 前缀的旧版本，不会删除同源部署的其他应用缓存；导航页也会按自身 URL 缓存，避免单文件版或其他页面覆盖离线首页。
+
 Android 调试包：
 
 ```bash
@@ -78,4 +86,4 @@ gradle assembleDebug
 
 按钮图标来自 [Lucide](https://lucide.dev/)，以本地 SVG 方式使用。许可见 `icons/LUCIDE-LICENSE.txt`。
 
-Mac、Android、平板或手机需与 Windows 位于可互访网络中，并在“同步与备份”里填写 Windows 显示的服务地址和 token。macOS 正式安装包仍需 Apple Developer ID 签名与公证。
+Mac、Android、平板或手机需与 Windows 位于可互访网络中，并在“同步与备份”里填写 Windows 显示的服务地址和 token。macOS 本地构建可以直接安装；对外分发若要通过 Gatekeeper，仍需在构建环境配置 Apple Developer ID Application 证书和 Apple 公证凭据。这些凭据不得提交到仓库。

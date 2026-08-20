@@ -1,4 +1,5 @@
-const CACHE = 'virtual-study-room-v21';
+const CACHE_PREFIX = 'virtual-study-room-';
+const CACHE = `${CACHE_PREFIX}v22`;
 const APP_SHELL = [
   './', './index.html', './css/style.css?v=20260820-2', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
@@ -15,7 +16,15 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE)
+          .map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', event => {
@@ -26,19 +35,31 @@ self.addEventListener('fetch', event => {
 
   // HTML navigation: network first, fall back to cache for offline use.
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE).then(cache => cache.put('./index.html', copy));
-      return response;
-    }).catch(() => caches.match('./index.html')));
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(CACHE);
+          await cache.put(request, response.clone());
+          if (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')) {
+            await cache.put('./index.html', response.clone());
+          }
+        }
+        return response;
+      } catch (error) {
+        return (await caches.match(request)) || caches.match('./index.html');
+      }
+    })());
     return;
   }
 
   // Static assets: stale-while-revalidate so updates apply on next load.
   event.respondWith(caches.match(request).then(cached => {
     const network = fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE).then(cache => cache.put(request, copy));
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE).then(cache => cache.put(request, copy));
+      }
       return response;
     }).catch(() => cached);
     return cached || network;

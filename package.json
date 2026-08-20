@@ -9,7 +9,7 @@
     "start": "electron .",
     "archive:win": "node server/windows-archive.js",
     "build:single": "node tools/build-single-file.mjs",
-    "test": "node --test test/archive-core.test.js test/archive-server.test.js",
+    "test": "node --test test/archive-core.test.js test/archive-server.test.js test/project-integrity.test.js test/service-worker.test.js",
     "smoke:archive": "node test/http-smoke.mjs",
     "check:js": "node tools/check-js.mjs",
     "dist:win": "electron-builder --win portable --x64",
@@ -44,7 +44,7 @@
           ]
         }
       ],
-      "icon": "build/icon.png"
+      "icon": "build/app-icon-v2.ico"
     },
     "mac": {
       "target": [
