@@ -29,6 +29,18 @@ const App = {
     { id: 'total_10h', name: '积累者', desc: '累计专注10小时', icon: '⏳', check: (s) => s.totalHours >= 10 },
     { id: 'total_100h', name: '修行者', desc: '累计专注100小时', icon: '🧘', check: (s) => s.totalHours >= 100 },
     { id: 'total_500h', name: '苦行僧', desc: '累计专注500小时', icon: '🏔️', check: (s) => s.totalHours >= 500 },
+    { id: 'tomato_crate', name: '番茄批发商', desc: '完成25次番茄钟，已经不是零售规模', icon: '🧺', check: (s) => s.totalSessions >= 25 },
+    { id: 'focus_404', name: '摸鱼页面不存在', desc: '完成404次专注，摸鱼请求返回 Not Found', icon: '🖥️', check: (s) => s.totalSessions >= 404 },
+    { id: 'focus_666', name: '专注上头', desc: '完成666次专注，计时器开始怕你', icon: '😈', check: (s) => s.totalSessions >= 666 },
+    { id: 'human_timer', name: '人形计时器', desc: '累计专注1000小时，体内可能有石英晶振', icon: '🤖', check: (s) => s.totalHours >= 1000 },
+    { id: 'chair_welded', name: '椅子焊住了', desc: '单日专注达到8小时，建议起来走两步', icon: '🪑', check: (s) => s.maxDaily >= 480 },
+    { id: 'other_side_early_bird', name: '地球另一边的早起', desc: '凌晨0到5点完成专注', icon: '🌍', check: (s) => s.midnightSession },
+    { id: 'rice_can_wait', name: '饭可以晚点吃', desc: '午饭时段仍在专注；解锁后请先去吃饭', icon: '🍚', check: (s) => s.lunchSession },
+    { id: 'weekend_warrior', name: '周末是什么', desc: '在周末完成5次专注', icon: '🛡️', check: (s) => s.weekendSessions >= 5 },
+    { id: 'perfect_tomato', name: '标准件出厂', desc: '完成一次正好25分钟的标准番茄', icon: '📏', check: (s) => s.perfectTwentyFive },
+    { id: 'review_detective', name: '复盘侦探', desc: '写下10条复盘，案发现场逐渐清晰', icon: '🕵️', check: (s) => s.reviewCount >= 10 },
+    { id: 'subject_octopus', name: '学科八爪鱼', desc: '在5个不同分类留下专注记录', icon: '🐙', check: (s) => s.categoryCount >= 5 },
+    { id: 'brake_technician', name: '刹车也是技术', desc: '合理使用一次提前结束，没有硬熬', icon: '🛑', check: (s) => s.endedEarlyCount >= 1 },
   ],
 
   init() {
@@ -328,8 +340,24 @@ const App = {
       tasks = Array.isArray(storedTasks) ? storedTasks : [];
     } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
+    const sessionHours = sessions.map(session => new Date(session.timestamp || session.startedAt || 0).getHours());
+    const midnightSession = sessionHours.some(hour => hour >= 0 && hour < 5);
+    const lunchSession = sessionHours.some(hour => hour >= 11 && hour < 14);
+    const weekendSessions = sessions.filter(session => {
+      const date = new Date(session.timestamp || session.startedAt || `${session.date || ''}T12:00:00`);
+      return date.getDay() === 0 || date.getDay() === 6;
+    }).length;
+    const perfectTwentyFive = sessions.some(session => Number(session.duration) === 25 && !session.endedEarly);
+    const categoryCount = new Set(sessions.map(session => String(session.categoryPath || '').trim()).filter(Boolean)).size;
+    const endedEarlyCount = sessions.filter(session => session.endedEarly).length;
+    let reviewCount = 0;
+    try {
+      const daily = JSON.parse(localStorage.getItem('dailyReviews') || '[]');
+      const perSession = JSON.parse(localStorage.getItem('sessionReviews') || '[]');
+      reviewCount = (Array.isArray(daily) ? daily.length : 0) + (Array.isArray(perSession) ? perSession.length : 0);
+    } catch (error) { reviewCount = 0; }
 
-    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks };
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, categoryCount, endedEarlyCount, reviewCount };
   },
 
   // ---- Achievements ----

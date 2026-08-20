@@ -98,14 +98,41 @@ test('authenticated cross-origin clients can upload and Windows returns a durabl
     dailyReviews: [{ id: 'pad-review', date: '2026-08-16', result: '整理错题' }]
   })).status, 201);
 
+  const androidPreflight = await fetch(`${f.baseUrl}/api/v1/snapshots`, {
+    method: 'OPTIONS',
+    headers: { Origin: 'null', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type', 'Access-Control-Request-Private-Network': 'true' }
+  });
+  assert.equal(androidPreflight.status, 204);
+  assert.equal(androidPreflight.headers.get('access-control-allow-origin'), 'null');
+  assert.equal(androidPreflight.headers.get('access-control-allow-private-network'), 'true');
+  const androidSnapshot = createSnapshot({
+    deviceId: 'device-android-test',
+    deviceName: 'Android 自习室',
+    createdAt: '2026-08-16T04:00:00Z',
+    appData: {
+      focusSessions: [{ id: 'android-session', date: '2026-08-16', duration: 18, categoryPath: '数学', endedEarly: true }],
+      sessionReviews: [{ id: 'android-review', sessionId: 'android-session', date: '2026-08-16', result: '完成同步验证' }]
+    }
+  });
+  const androidUpload = await fetch(`${f.baseUrl}/api/v1/snapshots`, {
+    method: 'POST',
+    headers: { Origin: 'null', Authorization: token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(androidSnapshot)
+  });
+  assert.equal(androidUpload.status, 201);
+  assert.equal(androidUpload.headers.get('access-control-allow-origin'), 'null');
+
   const response = await fetch(`${f.baseUrl}/api/v1/aggregate`, { headers: { Origin: origin, Authorization: token } });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('access-control-allow-origin'), origin);
   const aggregate = await response.json();
-  assert.equal(aggregate.devices.length, 2);
-  assert.deepEqual(aggregate.appData.focusSessions.map(item => item.id), ['mac-session-old', 'mac-session-new']);
+  assert.equal(aggregate.devices.length, 3);
+  assert.deepEqual(aggregate.appData.focusSessions.map(item => item.id), ['mac-session-old', 'mac-session-new', 'android-session']);
   assert.equal(aggregate.appData.sessionReviews[0].result, '完成章节');
   assert.equal(aggregate.appData.dailyReviews[0].result, '整理错题');
+  assert.equal(aggregate.appData.focusSessions[2].categoryPath, '数学');
+  assert.equal(aggregate.appData.focusSessions[2].endedEarly, true);
+  assert.equal(aggregate.appData.sessionReviews[1].result, '完成同步验证');
 });
 
 test('same-device concurrent uploads keep every immutable archive indexed', async t => {

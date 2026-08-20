@@ -2,6 +2,7 @@
 const TaskManager = {
   tasks: [],
   categoryFilter: '',
+  fixedCategories: ['数学', '英语', '专业课', '政治', '课程学习'],
 
   init() {
     this.loadTasks();
@@ -104,6 +105,7 @@ const TaskManager = {
     });
     document.getElementById('btn-add-task')?.addEventListener('click', () => this.addTask());
     document.getElementById('btn-clear-completed')?.addEventListener('click', () => this.clearCompleted());
+    document.getElementById('task-category-preset')?.addEventListener('change', () => this.toggleCustomCategory());
     document.getElementById('task-category-filter')?.addEventListener('change', event => {
       this.categoryFilter = event.target.value;
       this.render();
@@ -112,6 +114,20 @@ const TaskManager = {
       input?.focus();
       input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
+    this.toggleCustomCategory();
+  },
+
+  toggleCustomCategory() {
+    const custom = document.getElementById('task-category-path');
+    const isCustom = document.getElementById('task-category-preset')?.value === '其他';
+    custom?.classList.toggle('hidden', !isCustom);
+    if (isCustom) custom?.focus();
+  },
+
+  categoryFromForm() {
+    const preset = document.getElementById('task-category-preset')?.value || '数学';
+    if (preset !== '其他') return preset;
+    return document.getElementById('task-category-path')?.value.trim().replace(/\s*[>＞\\]+\s*/g, '/').replace(/^\/+|\/+$/g, '') || '其他';
   },
 
   addTask(textOverride = '', options = {}) {
@@ -131,7 +147,7 @@ const TaskManager = {
       date: kind === 'habit' ? '' : (options.date || this.getTodayKey()),
       planId: options.planId,
       sourceFile: options.sourceFile,
-      categoryPath: options.categoryPath ?? document.getElementById('task-category-path')?.value.trim().replace(/\s*[>＞\\]+\s*/g, '/').replace(/^\/+|\/+$/g, ''),
+      categoryPath: options.categoryPath ?? this.categoryFromForm(),
       tags: options.tags ?? String(document.getElementById('task-tags')?.value || '').split(/[,，#]+/).map(tag => tag.trim()).filter(Boolean).slice(0, 12),
     });
     if (!this.tasks.some(item => item.id === task.id || (item.planId && item.planId === task.planId))) this.tasks.unshift(task);
@@ -336,7 +352,8 @@ const TaskManager = {
     const tasks = this.getVisibleTasks().filter(task => !task.completed);
     select.innerHTML = '<option value="">选择今日要专注的任务</option>' + tasks.map(task => {
       const prefix = task.kind === 'habit' ? '每日坚持' : '今日任务';
-      return `<option value="${this.escape(task.id)}">${prefix} · ${this.escape(task.text)}</option>`;
+      const category = task.categoryPath ? `${task.categoryPath} · ` : '';
+      return `<option value="${this.escape(task.id)}">${this.escape(category)}${prefix} · ${this.escape(task.text)}</option>`;
     }).join('');
     if (tasks.some(task => task.id === current)) select.value = current;
   },

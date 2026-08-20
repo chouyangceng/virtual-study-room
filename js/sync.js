@@ -5,6 +5,7 @@ const SyncManager = {
   stateKey: 'syncState',
   inFlight: null,
   timer: null,
+  scheduledUploadTimer: null,
   backoffUntil: 0,
   failureCount: 0,
   archives: [],
@@ -38,7 +39,8 @@ const SyncManager = {
   },
 
   networkSupported() {
-    return location.protocol !== 'file:' || new URLSearchParams(location.search).get('electron') === '1';
+    const view = new URLSearchParams(location.search);
+    return location.protocol !== 'file:' || view.get('electron') === '1' || view.get('android') === '1';
   },
 
   defaultSettings() {
@@ -55,6 +57,7 @@ const SyncManager = {
   },
 
   defaultDeviceName() {
+    if (new URLSearchParams(location.search).get('android') === '1') return 'Android 自习室';
     const platform = navigator.userAgentData?.platform || navigator.platform || '设备';
     return `${platform} 自习室`;
   },
@@ -175,7 +178,16 @@ const SyncManager = {
   scheduleUpload(reason, delay) {
     const settings = this.getSettings();
     if (!settings.autoSync || !settings.serviceUrl || !settings.token || !this.networkSupported()) return;
-    setTimeout(() => this.uploadNow(reason), delay || 0);
+    if (this.scheduledUploadTimer) clearTimeout(this.scheduledUploadTimer);
+    this.scheduledUploadTimer = setTimeout(async () => {
+      this.scheduledUploadTimer = null;
+      if (this.inFlight) {
+        await this.inFlight;
+        this.scheduleUpload(reason, 300);
+        return;
+      }
+      this.uploadNow(reason);
+    }, delay || 0);
   },
 
   apiUrl(path) {

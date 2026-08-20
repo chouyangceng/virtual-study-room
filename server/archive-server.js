@@ -40,12 +40,16 @@ function allowedApiOrigin(request) {
 function corsHeaders(request) {
   const origin = allowedApiOrigin(request);
   if (!origin) return {};
-  return {
+  const headers = {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Vary': 'Origin'
+    'Vary': 'Origin, Access-Control-Request-Private-Network'
   };
+  if (String(request.headers['access-control-request-private-network'] || '').toLowerCase() === 'true') {
+    headers['Access-Control-Allow-Private-Network'] = 'true';
+  }
+  return headers;
 }
 
 function authorized(request, token) {

@@ -68,6 +68,8 @@ const ReviewManager = {
     document.getElementById('btn-ai-weekly')?.addEventListener('click', () => this.analyzeWeeklyWithDeepSeek());
     document.getElementById('btn-save-weekly')?.addEventListener('click', () => this.saveWeeklyReport());
     document.getElementById('btn-download-weekly')?.addEventListener('click', () => this.downloadWeeklyReport());
+    document.getElementById('btn-weekly-to-bottom')?.addEventListener('click', () => this.scrollWeekly('bottom'));
+    document.getElementById('btn-weekly-to-top')?.addEventListener('click', () => this.scrollWeekly('top'));
     document.getElementById('btn-save-weekly-api')?.addEventListener('click', () => this.saveDeepseekSettings(false, 'weekly'));
     document.getElementById('weekly-key-toggle')?.addEventListener('click', () => {
       const input = document.getElementById('weekly-deepseek-api-key');
@@ -80,6 +82,13 @@ const ReviewManager = {
       const tab = ['today', 'history', 'weekly'].includes(view.get('tab')) ? view.get('tab') : 'today';
       setTimeout(() => this.openDaily(tab), 0);
     }
+  },
+
+  scrollWeekly(direction) {
+    const target = direction === 'bottom'
+      ? document.getElementById('weekly-report-footer')
+      : document.getElementById('weekly-report-output');
+    target?.scrollIntoView({ behavior: 'smooth', block: direction === 'bottom' ? 'end' : 'start' });
   },
 
   load() {
@@ -116,6 +125,7 @@ const ReviewManager = {
   save() {
     SafeStore.set('dailyReviews', JSON.stringify(this.reviews));
     SafeStore.set('sessionReviews', JSON.stringify(this.sessionReviews));
+    if (typeof SyncManager !== 'undefined') SyncManager.scheduleUpload('review-change', 700);
   },
 
   todayKey(date = new Date()) {
@@ -616,6 +626,7 @@ const ReviewManager = {
       const lines = tomorrowTasks.split(/\r?\n/).map(line => line.replace(/^[-*•]\s*/, '').trim()).filter(Boolean);
       TaskManager.syncReviewReminders(date, entry.tomorrowDate, lines);
     }
+    if (typeof SyncManager !== 'undefined') SyncManager.scheduleUpload('daily-close', 700);
     this.renderHistory();
     if (!silent && typeof App !== 'undefined') App.showToast(tomorrowTasks ? '今日收尾已保存，明日提醒已加入下一学习日' : '今日收尾已保存');
     if (closeAfterSave) this.closeDayClose();

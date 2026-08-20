@@ -67,9 +67,14 @@ async function createWindow() {
     } catch (error) { /* reject malformed external URL */ }
     return { action: 'deny' };
   });
+  const allowedPermissions = new Set(['notifications', 'fullscreen', 'local-network-access']);
+  win.webContents.session.setPermissionCheckHandler((webContents, permission, requestingOrigin, details) => {
+    const requestingUrl = details?.requestingUrl || requestingOrigin || webContents.getURL();
+    return trustedUrl(requestingUrl) && allowedPermissions.has(permission);
+  });
   win.webContents.session.setPermissionRequestHandler((webContents, permission, callback, details) => {
     const requestingUrl = details?.requestingUrl || webContents.getURL();
-    callback(trustedUrl(requestingUrl) && (permission === 'notifications' || permission === 'fullscreen'));
+    callback(trustedUrl(requestingUrl) && allowedPermissions.has(permission));
   });
   if (archiveService) await win.loadURL(`${archiveOrigin}/index.html`);
   else await win.loadFile(localIndex, { query: { electron: '1' } });

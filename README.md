@@ -1,8 +1,18 @@
-# 虚拟自习室 1.3.0
+# 虚拟自习室 1.4.0
 
 一个离线优先的学习任务、番茄钟、周/月计划、复盘与统计工具。Windows 轻量版复用系统 Edge 与 Node，浏览器和单文件版也可直接运行。
 
-## 1.3.0 核心变化
+## 1.4.0 核心变化
+
+- 周报正文改用复盘中心主滚动，并提供“跳到底部/回到顶部”操作，长报告在 Mac、平板和手机上都能顺畅阅读。
+- 番茄钟新增“提前结束”，专注超过 30 秒后可按实际时长保存并进入复盘。
+- 多目标新增流程保存后自动回到空白表单，可连续添加考研、考试、课程和习惯目标。
+- 新任务分类固定为数学、英语、专业课、政治、课程学习和其他（自定义），统计按实际分类汇总。
+- 修复统计弹窗隐藏状态初始化图表导致的零尺寸失败；本周和本月图表增加重试与文字数据摘要。
+- 成就库新增 12 个进阶和搞怪成就。
+- 新增 Android 工程，构建时复用桌面端全部前端文件，并使用同一 Windows 快照归档协议。
+
+## 1.3.0 同步与复盘基础
 
 - Windows 作为权威数据中心，保存 Mac、平板和手机上传的不可变快照；聚合接口会读取全部历史快照并按记录 ID 去重。
 - 修复 Mac Electron 与 Windows 服务跨源时的浏览器预检阻断。跨端 API 仍强制使用同步 token，`local-config` 仍仅限 Windows 本机读取且不开放 CORS。
@@ -48,6 +58,13 @@ npm run build:single
 npm run dist:win
 ```
 
+Android 调试包：
+
+```bash
+cd android
+gradle assembleDebug
+```
+
 - `index.html`：模块化入口
 - `虚拟自习室.html`：构建生成的单文件版本
 - `js/tasks.js`：统一任务、每日坚持、番茄统计
@@ -55,9 +72,10 @@ npm run dist:win
 - `js/plans.js`：周/月计划与 Excel 导入
 - `js/goals.js`：多目标倒计时
 - `shared/archive-core.js`：跨设备归档核心
+- `android/`：复用同一前端和同步协议的 Android WebView 安装包
 
 ## 图标许可
 
 按钮图标来自 [Lucide](https://lucide.dev/)，以本地 SVG 方式使用。许可见 `icons/LUCIDE-LICENSE.txt`。
 
-Mac、平板或手机需与 Windows 位于可互访网络中，并在“同步与备份”里填写 Windows 显示的服务地址和 token。macOS 正式安装包仍需 Apple Developer ID 签名与公证。
+Mac、Android、平板或手机需与 Windows 位于可互访网络中，并在“同步与备份”里填写 Windows 显示的服务地址和 token。macOS 正式安装包仍需 Apple Developer ID 签名与公证。

@@ -44,6 +44,7 @@ const PomodoroTimer = {
 
   bindUI() {
     document.getElementById('btn-start-pause').addEventListener('click', () => this.toggle());
+    document.getElementById('btn-finish-early')?.addEventListener('click', () => this.finishEarly());
     document.getElementById('btn-reset').addEventListener('click', () => this.reset());
     document.getElementById('session-task-select')?.addEventListener('change', event => {
       this.currentTaskId = event.target.value;
@@ -171,6 +172,7 @@ const PomodoroTimer = {
     document.getElementById('timer-status-badge').textContent = this.isWork ? '专注中' : '休息中';
 
     this.intervalId = setInterval(() => this.tick(), 1000);
+    this.updateFinishButton();
   },
 
   pause() {
@@ -181,6 +183,26 @@ const PomodoroTimer = {
     document.getElementById('btn-start-pause').textContent = '继续';
     document.querySelector('.timer-sep').classList.add('paused');
     document.getElementById('timer-status-badge').textContent = '已暂停';
+    this.updateFinishButton();
+  },
+
+  finishEarly() {
+    if (!this.currentSessionStart) return;
+    if (this.isRunning) this.syncElapsed();
+    const seconds = Math.max(0, Math.floor(this.activeSeconds));
+    if (this.isWork && seconds < 30) {
+      if (typeof App !== 'undefined') App.showToast('至少专注 30 秒后才能按实际时长提前结束');
+      return;
+    }
+    this.complete({ endedEarly: true });
+  },
+
+  updateFinishButton() {
+    const button = document.getElementById('btn-finish-early');
+    if (!button) return;
+    button.hidden = !this.currentSessionStart;
+    button.textContent = this.isWork ? '提前结束' : '结束休息';
+    button.setAttribute('aria-label', this.isWork ? '提前结束并保存本次专注' : '提前结束休息');
   },
 
   reset() {
@@ -211,6 +233,7 @@ const PomodoroTimer = {
     document.getElementById('timer-status-badge').textContent = '就绪';
     document.getElementById('timer-label').textContent = this.isWork ? '专注时间' : '休息时间';
 
+    this.updateFinishButton();
     this.render();
   },
 
@@ -233,7 +256,7 @@ const PomodoroTimer = {
     if (this.endAt) this.remaining = Math.max(0, Math.ceil((this.endAt - now) / 1000));
   },
 
-  complete() {
+  complete(options = {}) {
     this.syncElapsed();
     clearInterval(this.intervalId);
     this.intervalId = null;
@@ -245,7 +268,7 @@ const PomodoroTimer = {
     if (this.isWork) {
       // Record the completed session
       const durationMinutes = Math.max(1, Math.round(this.activeSeconds / 60));
-      const completedSession = this.recordSession(durationMinutes, this.currentSessionStart);
+      const completedSession = this.recordSession(durationMinutes, this.currentSessionStart, options);
       if (typeof TaskManager !== 'undefined') TaskManager.recordPomodoro(this.currentTaskId, durationMinutes);
       this.notify('专注完成', `${this.currentSessionName || '本次任务'}已完成一个番茄钟，休息一下吧。`);
       this.currentSessionName = '';
@@ -297,6 +320,7 @@ const PomodoroTimer = {
     this.activeSeconds = 0;
     this.lastTickAt = null;
     this.endAt = null;
+    this.updateFinishButton();
     this.render();
     this.saveSettings();
   },
@@ -352,7 +376,7 @@ const PomodoroTimer = {
     } catch (error) { /* system notifications are best effort */ }
   },
 
-  recordSession(durationMinutes, startedAt = null) {
+  recordSession(durationMinutes, startedAt = null, options = {}) {
     const today = this.getDateString();
     if (this.todayDataDate !== today) this.loadTodayData();
     const actualDuration = Math.max(1, durationMinutes || Math.round(this.workDuration / 60));
@@ -385,6 +409,7 @@ const PomodoroTimer = {
       sessionNote: this.currentSessionNote || '',
       taskId: this.currentTaskId || '',
       categoryPath: task?.categoryPath || '',
+      endedEarly: Boolean(options.endedEarly),
     };
     sessions.push(session);
     SafeStore.set('focusSessions', JSON.stringify(sessions));
@@ -395,6 +420,7 @@ const PomodoroTimer = {
       App.checkAchievements();
       App.updateStreakAndTotal();
     }
+    if (typeof SyncManager !== 'undefined') SyncManager.scheduleUpload('focus-session', 800);
 
     this.updateTodayDisplay();
     return session;

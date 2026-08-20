@@ -1,0 +1,49 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.vsr.studyroom"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.vsr.studyroom"
+        minSdk 26
+        targetSdk 35
+        versionCode 140
+        versionName "1.4.0"
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ["${buildDir}/generated/vsrAssets"]
+            res.srcDirs += ["${buildDir}/generated/vsrRes"]
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+
+def webRoot = file("../..")
+
+tasks.register("prepareWebAssets", Copy) {
+    into("${buildDir}/generated/vsrAssets/www")
+    from(webRoot) {
+        include "index.html", "manifest.webmanifest", "sw.js"
+        include "css/**", "js/**", "shared/**", "vendor/**", "icons/**"
+    }
+}
+
+tasks.register("prepareAppIcon", Copy) {
+    from("${webRoot}/icons/icon-192.png")
+    into("${buildDir}/generated/vsrRes/drawable-nodpi")
+    rename { "app_icon.png" }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("prepareWebAssets", "prepareAppIcon")
+}

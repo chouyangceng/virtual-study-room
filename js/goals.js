@@ -132,6 +132,18 @@ const GoalManager = {
     document.getElementById('goal-start').value = this.todayKey();
     document.getElementById('goal-days').value = 30;
     this.toggleTypeRows();
+    this.renderEditorState();
+    document.getElementById('goal-name')?.focus();
+  },
+
+  renderEditorState() {
+    const editing = Boolean(this.editingId);
+    const title = document.querySelector('.goal-editor-head h3');
+    const save = document.getElementById('btn-save-goal');
+    const remove = document.getElementById('btn-delete-goal');
+    if (title) title.textContent = editing ? '编辑当前目标' : '添加新目标';
+    if (save) save.textContent = editing ? '保存修改' : '添加目标';
+    if (remove) remove.hidden = !editing;
   },
 
   saveForm() {
@@ -143,6 +155,7 @@ const GoalManager = {
     if (!name) return App?.showToast?.('请填写目标名称');
     if (type === 'date' && !date) return App?.showToast?.('请选择目标日期');
 
+    const wasNew = !this.editingId;
     const goal = { id: this.editingId || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, type, date, start, days };
     const index = this.goals.findIndex(item => item.id === goal.id);
     if (index >= 0) this.goals[index] = goal;
@@ -151,7 +164,14 @@ const GoalManager = {
     this.editingId = goal.id;
     this.save();
     this.render();
-    App?.showToast?.('目标已保存');
+    if (wasNew) {
+      this.clearForm();
+      this.renderList();
+      App?.showToast?.(`已添加「${goal.name}」，可以继续添加下一个目标`);
+    } else {
+      this.renderEditorState();
+      App?.showToast?.('目标修改已保存');
+    }
   },
 
   deleteGoal(id) {
@@ -171,6 +191,7 @@ const GoalManager = {
     const type = document.getElementById('goal-type')?.value || 'date';
     document.getElementById('goal-date-row')?.classList.toggle('hidden', type !== 'date');
     document.getElementById('goal-streak-row')?.classList.toggle('hidden', type !== 'streak');
+    this.renderEditorState();
   },
 
   getGoalStatus(goal) {

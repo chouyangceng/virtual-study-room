@@ -24,12 +24,17 @@ const Stats = {
     document.getElementById('stats-modal').querySelector('.modal-backdrop').addEventListener('click', () => this.closeModal());
     document.getElementById('btn-export-data').addEventListener('click', () => this.exportData());
     document.getElementById('btn-clear-history').addEventListener('click', () => this.clearHistory());
+    document.querySelectorAll('[data-chart-retry]').forEach(button => button.addEventListener('click', () => {
+      const sessions = this.getSessions();
+      if (button.dataset.chartRetry === 'weekly') this.renderWeeklyChart(sessions);
+      if (button.dataset.chartRetry === 'monthly') this.renderMonthlyChart(sessions);
+    }));
   },
 
   openModal() {
-    this.refresh();
     document.getElementById('stats-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => requestAnimationFrame(() => this.refresh()));
   },
 
   closeModal() {
@@ -147,11 +152,9 @@ const Stats = {
   },
 
   renderWeeklyChart(sessions) {
-    if (this.weeklyChart) this.weeklyChart.destroy();
-    if (typeof Chart === 'undefined') {
-      document.getElementById('chart-weekly').replaceWith(this.createChartFallback('chart-weekly', '图表库加载失败，仍可查看下方记录'));
-      return;
-    }
+    if (this.weeklyChart) { this.weeklyChart.destroy(); this.weeklyChart = null; }
+    const canvas = document.getElementById('chart-weekly');
+    if (!canvas) return;
 
     const days = [];
     const labels = [];
@@ -164,11 +167,21 @@ const Stats = {
       const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
       labels.push(`周${weekdays[d.getDay()]}`);
       const mins = sessions.filter(s => s.date === key).reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
-      days.push(Math.round(mins / 60 * 10) / 10); // hours with 1 decimal
+      days.push(Math.round(mins / 60 * 100) / 100);
     }
 
-    const ctx = document.getElementById('chart-weekly').getContext('2d');
-    this.weeklyChart = new Chart(ctx, {
+    const total = Math.round(days.reduce((sum, value) => sum + value, 0) * 100) / 100;
+    document.getElementById('chart-weekly-summary').textContent = `本周共 ${total} 小时；${labels.map((label, index) => `${label} ${days[index]} 小时`).join('，')}`;
+    canvas.setAttribute('aria-label', `本周每日专注时长。本周共 ${total} 小时。`);
+    if (typeof Chart === 'undefined') {
+      this.setChartState('weekly', true, '图表组件未加载，可点击重试；文字数据仍可正常查看');
+      return;
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('无法创建画布');
+      this.weeklyChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
@@ -209,15 +222,18 @@ const Stats = {
           },
         },
       },
-    });
+      });
+      this.setChartState('weekly', false);
+    } catch (error) {
+      console.error('本周图表绘制失败', error);
+      this.setChartState('weekly', true, '本周图表绘制失败，可点击重试；文字数据仍可正常查看');
+    }
   },
 
   renderMonthlyChart(sessions) {
-    if (this.monthlyChart) this.monthlyChart.destroy();
-    if (typeof Chart === 'undefined') {
-      document.getElementById('chart-monthly').replaceWith(this.createChartFallback('chart-monthly', '图表库加载失败，仍可查看下方记录'));
-      return;
-    }
+    if (this.monthlyChart) { this.monthlyChart.destroy(); this.monthlyChart = null; }
+    const canvas = document.getElementById('chart-monthly');
+    if (!canvas) return;
 
     const now = new Date();
     const year = now.getFullYear();
@@ -231,11 +247,24 @@ const Stats = {
       const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       labels.push(d + '日');
       const mins = sessions.filter(s => s.date === key).reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
-      data.push(Math.round(mins / 60 * 10) / 10);
+      data.push(Math.round(mins / 60 * 100) / 100);
     }
 
-    const ctx = document.getElementById('chart-monthly').getContext('2d');
-    this.monthlyChart = new Chart(ctx, {
+    const total = Math.round(data.reduce((sum, value) => sum + value, 0) * 100) / 100;
+    const bestIndex = data.reduce((best, value, index) => value > data[best] ? index : best, 0);
+    document.getElementById('chart-monthly-summary').textContent = total
+      ? `本月共 ${total} 小时；最高为 ${labels[bestIndex]} ${data[bestIndex]} 小时。`
+      : '本月还没有专注记录。完成一次番茄钟后会显示趋势。';
+    canvas.setAttribute('aria-label', total ? `本月专注趋势。本月共 ${total} 小时，最高为 ${labels[bestIndex]}。` : '本月暂无专注数据');
+    if (typeof Chart === 'undefined') {
+      this.setChartState('monthly', true, '图表组件未加载，可点击重试；文字数据仍可正常查看');
+      return;
+    }
+
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('无法创建画布');
+      this.monthlyChart = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
@@ -278,7 +307,12 @@ const Stats = {
           },
         },
       },
-    });
+      });
+      this.setChartState('monthly', false);
+    } catch (error) {
+      console.error('本月图表绘制失败', error);
+      this.setChartState('monthly', true, '本月图表绘制失败，可点击重试；文字数据仍可正常查看');
+    }
   },
 
   renderCategoryChart(sessions) {
@@ -323,12 +357,13 @@ const Stats = {
     });
   },
 
-  createChartFallback(id, text) {
-    const el = document.createElement('div');
-    el.id = id;
-    el.className = 'chart-fallback';
-    el.textContent = text;
-    return el;
+  setChartState(name, failed, message = '') {
+    const canvas = document.getElementById(`chart-${name}`);
+    const fallback = document.getElementById(`chart-${name}-fallback`);
+    canvas?.classList.toggle('hidden', failed);
+    fallback?.classList.toggle('hidden', !failed);
+    const text = fallback?.querySelector('span');
+    if (text && message) text.textContent = message;
   },
 
   renderHeatmap(sessions) {
