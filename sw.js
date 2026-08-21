@@ -1,7 +1,7 @@
 const CACHE_PREFIX = 'virtual-study-room-';
-const CACHE = `${CACHE_PREFIX}v24`;
+const CACHE = `${CACHE_PREFIX}v25`;
 const APP_SHELL = [
-  './', './index.html', './css/style.css?v=20260821-2', './manifest.webmanifest',
+  './', './index.html', './css/style.css?v=20260821-3', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
   './vendor/chart.umd.min.js', './vendor/xlsx.full.min.js',
   './shared/archive-core.js?v=20260821-2', './js/storage.js', './js/achievements.js?v=20260821-1', './js/background.js',

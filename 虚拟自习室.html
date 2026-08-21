@@ -844,8 +844,8 @@ body {
 }
 
 .year-heatmap {
-  --heatmap-cell: 9px;
-  --heatmap-gap: 3px;
+  --heatmap-cell: 7px;
+  --heatmap-gap: 2px;
   min-width: 0;
   color: var(--text-muted);
   font-size: 10px;
@@ -933,7 +933,7 @@ body {
 
 .heatmap-legend i { width: 9px; height: 9px; border-radius: 2px; }
 
-.year-heatmap.compact { --heatmap-cell: 5px; --heatmap-gap: 2px; }
+.year-heatmap.compact { --heatmap-cell: 4px; --heatmap-gap: 2px; }
 .year-heatmap.compact .heatmap-months { min-height: 15px; margin-left: 21px; }
 .year-heatmap.compact .heatmap-body { gap: 5px; }
 .year-heatmap.compact .heatmap-weekdays { width: 16px; font-size: 8px; }
@@ -2070,7 +2070,7 @@ body.panorama-mode[data-theme="dark"] #bg-overlay { background: linear-gradient(
 .unified-task-picker select { min-height: 42px; font-size: 12px; }
 .unified-task-picker .text-btn { min-height: 42px; white-space: nowrap; }
 
-#timer-container { display: grid; place-items: center; isolation: isolate; }
+#timer-container { display: grid; flex: 0 0 auto; place-items: center; isolation: isolate; }
 #timer-ring { z-index: 0; }
 #timer-display {
   position: relative;

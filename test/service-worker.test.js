@@ -40,12 +40,12 @@ function loadServiceWorker({ cacheKeys = [], fetchImpl } = {}) {
 
 test('activation removes only stale virtual-study-room caches', async () => {
   const worker = loadServiceWorker({
-    cacheKeys: ['virtual-study-room-v20', 'virtual-study-room-v22', 'virtual-study-room-v23', 'virtual-study-room-v24', 'mistake-notebook-v1']
+    cacheKeys: ['virtual-study-room-v20', 'virtual-study-room-v22', 'virtual-study-room-v23', 'virtual-study-room-v24', 'virtual-study-room-v25', 'mistake-notebook-v1']
   });
   let activation;
   worker.handlers.activate({ waitUntil: promise => { activation = promise; } });
   await activation;
-  assert.deepEqual(worker.deleted, ['virtual-study-room-v20', 'virtual-study-room-v22', 'virtual-study-room-v23']);
+  assert.deepEqual(worker.deleted, ['virtual-study-room-v20', 'virtual-study-room-v22', 'virtual-study-room-v23', 'virtual-study-room-v24']);
 });
 
 test('navigation caches its own URL without replacing the offline home page', async () => {
