@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260820-2">
+  <link rel="stylesheet" href="css/style.css?v=20260821-1">
 </head>
 <body data-theme="light">
   <!-- Local Lucide icon subset (ISC; see icons/LUCIDE-LICENSE.txt). -->
@@ -241,6 +241,15 @@
           </div>
           <div id="goal-overview-list" class="goal-overview-list"><span class="goal-overview-empty">还没有目标</span></div>
         </div>
+        <section id="memo-card" class="info-card memo-card" aria-labelledby="memo-title">
+          <div class="goal-card-head">
+            <div><div id="memo-title" class="info-label">备忘录</div><small id="memo-status" class="memo-status" aria-live="polite">自动保存</small></div>
+            <button id="btn-clear-memo" class="text-btn compact" type="button">清空</button>
+          </div>
+          <label class="sr-only" for="memo-input">备忘录内容</label>
+          <textarea id="memo-input" maxlength="5000" rows="6" placeholder="随手记下公式、提醒、临时想法……"></textarea>
+          <div class="memo-footer"><span id="memo-count">0 / 5000</span><span>Ctrl/⌘ + Enter 保存</span></div>
+        </section>
         <div id="weekly-plan-card" class="info-card weekly-plan-card">
           <div class="goal-card-head"><div class="info-label">本周计划</div><button id="btn-open-weekly-plans" class="text-btn" type="button">查看全部</button></div>
           <div id="weekly-plan-preview" class="weekly-plan-preview"><span>尚未导入每周计划</span></div>
@@ -547,10 +556,18 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content glass-panel">
       <div class="modal-header">
-        <h2 id="achievements-title">🏆 成就徽章</h2>
+        <div><h2 id="achievements-title">🏆 成就徽章</h2><p class="modal-subtitle">认真学习，也认真奖励每一个奇怪的里程碑</p></div>
         <button class="modal-close" type="button" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="achievement-toolbar">
+          <div class="achievement-summary"><strong id="achievement-unlocked-count">0 / 0</strong><span>已解锁</span><div class="achievement-summary-track"><i id="achievement-summary-progress"></i></div></div>
+          <div class="achievement-filters" role="group" aria-label="筛选成就">
+            <button class="achievement-filter active" type="button" data-achievement-filter="all" aria-pressed="true">全部</button>
+            <button class="achievement-filter" type="button" data-achievement-filter="unlocked" aria-pressed="false">已解锁</button>
+            <button class="achievement-filter" type="button" data-achievement-filter="locked" aria-pressed="false">未解锁</button>
+          </div>
+        </div>
         <div id="achievements-grid"></div>
       </div>
     </div>
@@ -593,6 +610,7 @@
   <script src="vendor/chart.umd.min.js"></script>
   <script src="vendor/xlsx.full.min.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/achievements.js?v=20260821-1"></script>
   <script src="js/background.js"></script>
   <script src="js/timer.js?v=20260820-3"></script>
   <script src="js/templates.js"></script>
@@ -600,11 +618,12 @@
   <script src="js/tasks.js?v=20260820-1"></script>
   <script src="js/plans.js?v=20260816-5"></script>
   <script src="js/import-hub.js"></script>
-  <script src="shared/archive-core.js?v=20260816-9"></script>
-  <script src="js/sync.js?v=20260820-2"></script>
+  <script src="shared/archive-core.js?v=20260821-1"></script>
+  <script src="js/sync.js?v=20260821-1"></script>
   <script src="js/reviews.js?v=20260820-2"></script>
-  <script src="js/stats.js?v=20260820-2"></script>
+  <script src="js/stats.js?v=20260821-1"></script>
+  <script src="js/memos.js?v=20260821-1"></script>
   <script src="js/goals.js?v=20260820-1"></script>
-  <script src="js/app.js?v=20260820-1"></script>
+  <script src="js/app.js?v=20260821-1"></script>
 </body>
 </html>

@@ -523,6 +523,7 @@ const Stats = {
     let sessionReviews = [];
     let dailyCloseEntries = [];
     let weeklyReports = [];
+    let memoData = {};
     let appSettings = {};
     let deepseekSettings = {};
     try { tasks = JSON.parse(localStorage.getItem('tasks') || '[]'); } catch (e) {}
@@ -535,6 +536,7 @@ const Stats = {
     try { sessionReviews = JSON.parse(localStorage.getItem('sessionReviews') || '[]'); } catch (e) {}
     try { dailyCloseEntries = JSON.parse(localStorage.getItem('dailyCloseEntries') || '[]'); } catch (e) {}
     try { weeklyReports = JSON.parse(localStorage.getItem('weeklyReports') || '[]'); } catch (e) {}
+    try { memoData = JSON.parse(localStorage.getItem('memoData') || '{}'); } catch (e) {}
     try { appSettings = JSON.parse(localStorage.getItem('appSettings') || '{}'); } catch (e) {}
     try { deepseekSettings = JSON.parse(localStorage.getItem('deepseekSettings') || '{}'); } catch (e) {}
     const deepseekExport = typeof VsrArchiveCore !== 'undefined'
@@ -554,6 +556,7 @@ const Stats = {
       sessionReviews,
       dailyCloseEntries,
       weeklyReports,
+      memoData,
       appSettings,
       deepseekSettings: deepseekExport,
       currentStudyGoal: localStorage.getItem('currentStudyGoal') || '',

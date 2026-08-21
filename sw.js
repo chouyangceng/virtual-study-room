@@ -1,14 +1,14 @@
 const CACHE_PREFIX = 'virtual-study-room-';
-const CACHE = `${CACHE_PREFIX}v22`;
+const CACHE = `${CACHE_PREFIX}v23`;
 const APP_SHELL = [
-  './', './index.html', './css/style.css?v=20260820-2', './manifest.webmanifest',
+  './', './index.html', './css/style.css?v=20260821-1', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png',
   './vendor/chart.umd.min.js', './vendor/xlsx.full.min.js',
-  './shared/archive-core.js?v=20260816-9', './js/storage.js', './js/background.js',
+  './shared/archive-core.js?v=20260821-1', './js/storage.js', './js/achievements.js?v=20260821-1', './js/background.js',
   './js/timer.js?v=20260820-3', './js/templates.js', './js/courses.js',
   './js/tasks.js?v=20260820-1', './js/plans.js?v=20260816-5',
-  './js/import-hub.js', './js/sync.js?v=20260820-2', './js/reviews.js?v=20260820-2', './js/stats.js?v=20260820-2',
-  './js/goals.js?v=20260820-1', './js/app.js?v=20260820-1'
+  './js/import-hub.js', './js/sync.js?v=20260821-1', './js/reviews.js?v=20260820-2', './js/stats.js?v=20260821-1',
+  './js/memos.js?v=20260821-1', './js/goals.js?v=20260820-1', './js/app.js?v=20260821-1'
 ];
 
 self.addEventListener('install', event => {

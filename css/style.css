@@ -938,11 +938,15 @@ body {
 /* Achievements */
 #achievements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 12px;
 }
 
 .achievement-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 210px;
   padding: 16px;
   border-radius: 14px;
   background: var(--surface);
@@ -975,6 +979,7 @@ body {
 .achievement-desc {
   font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.55;
 }
 
 .achievement-date {
@@ -982,6 +987,23 @@ body {
   color: var(--accent);
   margin-top: 4px;
 }
+
+#achievements-modal .modal-content { width: min(1180px, calc(100vw - 28px)); max-height: min(900px, calc(100dvh - 28px)); }
+#achievements-modal .modal-body { display: grid; gap: 14px; overflow-y: auto; scrollbar-gutter: stable; }
+.achievement-toolbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-bg); }
+.achievement-summary { display: grid; grid-template-columns: auto auto; align-items: baseline; min-width: 180px; gap: 2px 8px; }
+.achievement-summary strong { color: var(--accent); font: 700 18px 'JetBrains Mono', monospace; }
+.achievement-summary span { color: var(--text-muted); font-size: 11px; }
+.achievement-summary-track { grid-column: 1 / -1; height: 5px; overflow: hidden; border-radius: 999px; background: var(--ring-bg); }
+.achievement-summary-track i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .3s ease; }
+.achievement-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.achievement-filter { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-secondary); font: inherit; font-size: 11px; cursor: pointer; }
+.achievement-filter:hover, .achievement-filter:focus-visible { border-color: var(--accent); outline: none; }
+.achievement-filter.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.achievement-group { align-self: flex-start; margin-bottom: 6px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 9px; font-weight: 700; }
+.achievement-progress { height: 5px; margin-top: auto; overflow: hidden; border-radius: 999px; background: var(--ring-bg); }
+.achievement-progress i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.achievement-progress-text { margin-top: 5px; color: var(--text-muted); font: 500 9px 'JetBrains Mono', monospace; }
 
 /* ---------- Toast ---------- */
 #toast-container {
@@ -1409,6 +1431,12 @@ body {
 .weekly-plan-preview strong { overflow: hidden; color: var(--text-primary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .weekly-plan-preview small, .weekly-plan-preview > span, .weekly-plan-preview em { color: var(--text-muted); font-size: 10px; }
 .weekly-plan-preview em { font-style: normal; }
+.memo-card { display: grid; gap: 9px; }
+.memo-status { display: block; margin-top: 3px; color: var(--text-muted); font-size: 9px; }
+#memo-input { width: 100%; min-height: 116px; max-height: 260px; resize: vertical; padding: 10px 11px; border: 1px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--text-primary); font: inherit; font-size: 12px; line-height: 1.6; outline: none; }
+#memo-input::placeholder { color: var(--text-muted); }
+#memo-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.memo-footer { display: flex; justify-content: space-between; gap: 8px; color: var(--text-muted); font-size: 9px; }
 .import-hub-content { width: min(520px, calc(100vw - 28px)); }
 .import-hub-body { gap: 14px; }
 .import-hub-drop { display: grid; gap: 7px; padding: 22px 16px; border: 1px dashed var(--accent); border-radius: 12px; background: var(--surface); text-align: center; }
@@ -2329,6 +2357,35 @@ body.panorama-mode #topbar .topbar-more { display: block; }
 .weekly-api-panel input:focus, .weekly-api-panel select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-glow); }
 .weekly-key-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
 .weekly-api-warning { padding: 10px; border-radius: 9px; background: rgba(231,131,94,.1); color: var(--text-secondary) !important; }
+
+/* Independent side-column scrolling and task overflow containment */
+#task-panel, #info-panel {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+#task-panel::-webkit-scrollbar, #info-panel::-webkit-scrollbar { width: 9px; }
+#task-panel::-webkit-scrollbar-thumb, #info-panel::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: var(--scrollbar-thumb); background-clip: padding-box; }
+#task-list { flex: 0 0 auto; min-height: 0; overflow: visible; padding-right: 0; }
+.task-item { flex: 0 0 auto; align-items: flex-start; min-width: 0; }
+.task-text { overflow-wrap: anywhere; line-height: 1.45; }
+.task-delete { flex: 0 0 auto; }
+.task-item:focus-within .task-delete { opacity: 1; }
+
+@media (hover: none) {
+  .task-delete { opacity: .72; }
+}
+
+@media (max-width: 600px) {
+  .achievement-toolbar { position: static; align-items: stretch; flex-direction: column; }
+  .achievement-filters { display: grid; grid-template-columns: repeat(3, 1fr); }
+  #achievements-grid { grid-template-columns: 1fr; }
+  .achievement-card { min-height: 0; }
+  .memo-footer span:last-child { display: none; }
+}
 
 @media (max-width: 900px) {
   .reviews-content { width: 100vw; height: 100dvh; border-radius: 0; }

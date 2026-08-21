@@ -1,6 +1,6 @@
 {
   "name": "virtual-study-room",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "虚拟自习室 · Virtual Study Room",
   "main": "main.js",
   "author": "chouyangceng",
@@ -9,7 +9,7 @@
     "start": "electron .",
     "archive:win": "node server/windows-archive.js",
     "build:single": "node tools/build-single-file.mjs",
-    "test": "node --test test/archive-core.test.js test/archive-server.test.js test/project-integrity.test.js test/service-worker.test.js",
+    "test": "node --test test/achievements.test.js test/archive-core.test.js test/archive-server.test.js test/project-integrity.test.js test/service-worker.test.js",
     "smoke:archive": "node test/http-smoke.mjs",
     "check:js": "node tools/check-js.mjs",
     "dist:win": "electron-builder --win portable --x64",

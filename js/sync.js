@@ -1,6 +1,6 @@
 const SyncManager = {
   latestSchemaVersion: typeof VsrArchiveCore !== 'undefined' ? VsrArchiveCore.SNAPSHOT_SCHEMA_VERSION : 3,
-  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
+  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports', 'memoData', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
   settingsKey: 'syncSettings',
   stateKey: 'syncState',
   inFlight: null,

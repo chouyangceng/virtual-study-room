@@ -15,6 +15,7 @@ test('snapshot creation recursively removes credentials and sync secrets', () =>
     createdAt: '2026-08-12T00:00:00.000Z',
     appData: {
       focusSessions: [],
+      memoData: { text: 'Mac 上的备忘录', updatedAt: '2026-08-21T00:00:00.000Z' },
       syncSettings: { token: 'sync-secret' },
       deepseekSettings: {
         model: 'deepseek-chat',
@@ -27,6 +28,7 @@ test('snapshot creation recursively removes credentials and sync secrets', () =>
   assert.equal(snapshot.appData.deepseekSettings.apiKey, undefined);
   assert.equal(snapshot.appData.deepseekSettings.headers.Authorization, undefined);
   assert.equal(snapshot.appData.deepseekSettings.headers.Accept, 'application/json');
+  assert.deepEqual(snapshot.appData.memoData, { text: 'Mac 上的备忘录', updatedAt: '2026-08-21T00:00:00.000Z' });
 });
 
 test('server validation rejects unsupported fields, secrets, invalid id and future schema', () => {

@@ -951,11 +951,15 @@ body {
 /* Achievements */
 #achievements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 12px;
 }
 
 .achievement-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 210px;
   padding: 16px;
   border-radius: 14px;
   background: var(--surface);
@@ -988,6 +992,7 @@ body {
 .achievement-desc {
   font-size: 11px;
   color: var(--text-muted);
+  line-height: 1.55;
 }
 
 .achievement-date {
@@ -995,6 +1000,23 @@ body {
   color: var(--accent);
   margin-top: 4px;
 }
+
+#achievements-modal .modal-content { width: min(1180px, calc(100vw - 28px)); max-height: min(900px, calc(100dvh - 28px)); }
+#achievements-modal .modal-body { display: grid; gap: 14px; overflow-y: auto; scrollbar-gutter: stable; }
+.achievement-toolbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-bg); }
+.achievement-summary { display: grid; grid-template-columns: auto auto; align-items: baseline; min-width: 180px; gap: 2px 8px; }
+.achievement-summary strong { color: var(--accent); font: 700 18px 'JetBrains Mono', monospace; }
+.achievement-summary span { color: var(--text-muted); font-size: 11px; }
+.achievement-summary-track { grid-column: 1 / -1; height: 5px; overflow: hidden; border-radius: 999px; background: var(--ring-bg); }
+.achievement-summary-track i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .3s ease; }
+.achievement-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.achievement-filter { min-height: 36px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-secondary); font: inherit; font-size: 11px; cursor: pointer; }
+.achievement-filter:hover, .achievement-filter:focus-visible { border-color: var(--accent); outline: none; }
+.achievement-filter.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.achievement-group { align-self: flex-start; margin-bottom: 6px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 9px; font-weight: 700; }
+.achievement-progress { height: 5px; margin-top: auto; overflow: hidden; border-radius: 999px; background: var(--ring-bg); }
+.achievement-progress i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.achievement-progress-text { margin-top: 5px; color: var(--text-muted); font: 500 9px 'JetBrains Mono', monospace; }
 
 /* ---------- Toast ---------- */
 #toast-container {
@@ -1422,6 +1444,12 @@ body {
 .weekly-plan-preview strong { overflow: hidden; color: var(--text-primary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .weekly-plan-preview small, .weekly-plan-preview > span, .weekly-plan-preview em { color: var(--text-muted); font-size: 10px; }
 .weekly-plan-preview em { font-style: normal; }
+.memo-card { display: grid; gap: 9px; }
+.memo-status { display: block; margin-top: 3px; color: var(--text-muted); font-size: 9px; }
+#memo-input { width: 100%; min-height: 116px; max-height: 260px; resize: vertical; padding: 10px 11px; border: 1px solid var(--input-border); border-radius: 10px; background: var(--input-bg); color: var(--text-primary); font: inherit; font-size: 12px; line-height: 1.6; outline: none; }
+#memo-input::placeholder { color: var(--text-muted); }
+#memo-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.memo-footer { display: flex; justify-content: space-between; gap: 8px; color: var(--text-muted); font-size: 9px; }
 .import-hub-content { width: min(520px, calc(100vw - 28px)); }
 .import-hub-body { gap: 14px; }
 .import-hub-drop { display: grid; gap: 7px; padding: 22px 16px; border: 1px dashed var(--accent); border-radius: 12px; background: var(--surface); text-align: center; }
@@ -2343,6 +2371,35 @@ body.panorama-mode #topbar .topbar-more { display: block; }
 .weekly-key-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }
 .weekly-api-warning { padding: 10px; border-radius: 9px; background: rgba(231,131,94,.1); color: var(--text-secondary) !important; }
 
+/* Independent side-column scrolling and task overflow containment */
+#task-panel, #info-panel {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+#task-panel::-webkit-scrollbar, #info-panel::-webkit-scrollbar { width: 9px; }
+#task-panel::-webkit-scrollbar-thumb, #info-panel::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: var(--scrollbar-thumb); background-clip: padding-box; }
+#task-list { flex: 0 0 auto; min-height: 0; overflow: visible; padding-right: 0; }
+.task-item { flex: 0 0 auto; align-items: flex-start; min-width: 0; }
+.task-text { overflow-wrap: anywhere; line-height: 1.45; }
+.task-delete { flex: 0 0 auto; }
+.task-item:focus-within .task-delete { opacity: 1; }
+
+@media (hover: none) {
+  .task-delete { opacity: .72; }
+}
+
+@media (max-width: 600px) {
+  .achievement-toolbar { position: static; align-items: stretch; flex-direction: column; }
+  .achievement-filters { display: grid; grid-template-columns: repeat(3, 1fr); }
+  #achievements-grid { grid-template-columns: 1fr; }
+  .achievement-card { min-height: 0; }
+  .memo-footer span:last-child { display: none; }
+}
+
 @media (max-width: 900px) {
   .reviews-content { width: 100vw; height: 100dvh; border-radius: 0; }
   .reviews-content > .modal-header { padding: 14px 16px 12px; }
@@ -2606,6 +2663,15 @@ body.panorama-mode #topbar .topbar-more { display: block; }
           </div>
           <div id="goal-overview-list" class="goal-overview-list"><span class="goal-overview-empty">还没有目标</span></div>
         </div>
+        <section id="memo-card" class="info-card memo-card" aria-labelledby="memo-title">
+          <div class="goal-card-head">
+            <div><div id="memo-title" class="info-label">备忘录</div><small id="memo-status" class="memo-status" aria-live="polite">自动保存</small></div>
+            <button id="btn-clear-memo" class="text-btn compact" type="button">清空</button>
+          </div>
+          <label class="sr-only" for="memo-input">备忘录内容</label>
+          <textarea id="memo-input" maxlength="5000" rows="6" placeholder="随手记下公式、提醒、临时想法……"></textarea>
+          <div class="memo-footer"><span id="memo-count">0 / 5000</span><span>Ctrl/⌘ + Enter 保存</span></div>
+        </section>
         <div id="weekly-plan-card" class="info-card weekly-plan-card">
           <div class="goal-card-head"><div class="info-label">本周计划</div><button id="btn-open-weekly-plans" class="text-btn" type="button">查看全部</button></div>
           <div id="weekly-plan-preview" class="weekly-plan-preview"><span>尚未导入每周计划</span></div>
@@ -2912,10 +2978,18 @@ body.panorama-mode #topbar .topbar-more { display: block; }
     <div class="modal-backdrop"></div>
     <div class="modal-content glass-panel">
       <div class="modal-header">
-        <h2 id="achievements-title">🏆 成就徽章</h2>
+        <div><h2 id="achievements-title">🏆 成就徽章</h2><p class="modal-subtitle">认真学习，也认真奖励每一个奇怪的里程碑</p></div>
         <button class="modal-close" type="button" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="achievement-toolbar">
+          <div class="achievement-summary"><strong id="achievement-unlocked-count">0 / 0</strong><span>已解锁</span><div class="achievement-summary-track"><i id="achievement-summary-progress"></i></div></div>
+          <div class="achievement-filters" role="group" aria-label="筛选成就">
+            <button class="achievement-filter active" type="button" data-achievement-filter="all" aria-pressed="true">全部</button>
+            <button class="achievement-filter" type="button" data-achievement-filter="unlocked" aria-pressed="false">已解锁</button>
+            <button class="achievement-filter" type="button" data-achievement-filter="locked" aria-pressed="false">未解锁</button>
+          </div>
+        </div>
         <div id="achievements-grid"></div>
       </div>
     </div>
@@ -3040,6 +3114,76 @@ const SafeStore = {
     } catch (error) { /* ignore */ }
   },
 };
+
+</script>
+  <script>
+'use strict';
+
+const AchievementCatalog = (() => {
+  const milestoneSeries = ({ idPrefix, group, metric, icon, unit, items }) => items.map(([target, name]) => ({
+    id: `${idPrefix}_${target}`,
+    group,
+    metric,
+    target,
+    unit,
+    name,
+    desc: `${group}达到 ${target.toLocaleString()} ${unit}`,
+    icon,
+    check: stats => (Number(stats[metric]) || 0) >= target,
+  }));
+
+  const base = [
+    { id: 'first_session', group: '专注次数', name: '初次专注', desc: '完成第 1 次番茄钟', icon: '🍅', metric: 'totalSessions', target: 1, unit: '次', check: s => s.totalSessions >= 1 },
+    { id: 'ten_sessions', group: '专注次数', name: '专注新手', desc: '完成 10 次番茄钟', icon: '⭐', metric: 'totalSessions', target: 10, unit: '次', check: s => s.totalSessions >= 10 },
+    { id: 'fifty_sessions', group: '专注次数', name: '专注达人', desc: '完成 50 次番茄钟', icon: '🌟', metric: 'totalSessions', target: 50, unit: '次', check: s => s.totalSessions >= 50 },
+    { id: 'hundred_sessions', group: '专注次数', name: '番茄大师', desc: '完成 100 次番茄钟', icon: '👑', metric: 'totalSessions', target: 100, unit: '次', check: s => s.totalSessions >= 100 },
+    { id: 'one_hour_today', group: '单日纪录', name: '一小时挑战', desc: '单日专注超过 1 小时', icon: '⏱️', metric: 'maxDaily', target: 60, unit: '分钟', check: s => s.maxDaily >= 60 },
+    { id: 'three_hour_today', group: '单日纪录', name: '深度专注', desc: '单日专注超过 3 小时', icon: '🔥', metric: 'maxDaily', target: 180, unit: '分钟', check: s => s.maxDaily >= 180 },
+    { id: 'six_hour_today', group: '单日纪录', name: '学霸附体', desc: '单日专注超过 6 小时', icon: '📚', metric: 'maxDaily', target: 360, unit: '分钟', check: s => s.maxDaily >= 360 },
+    { id: 'streak_3', group: '连续坚持', name: '三日坚持', desc: '连续 3 天专注', icon: '📅', metric: 'currentStreak', target: 3, unit: '天', check: s => s.currentStreak >= 3 },
+    { id: 'streak_7', group: '连续坚持', name: '一周习惯', desc: '连续 7 天专注', icon: '🗓️', metric: 'currentStreak', target: 7, unit: '天', check: s => s.currentStreak >= 7 },
+    { id: 'streak_30', group: '连续坚持', name: '月度自律', desc: '连续 30 天专注', icon: '🏅', metric: 'currentStreak', target: 30, unit: '天', check: s => s.currentStreak >= 30 },
+    { id: 'early_bird', group: '特别时段', name: '早起鸟儿', desc: '早上 8 点前完成专注', icon: '🌅', check: s => s.earlyBird },
+    { id: 'night_owl', group: '特别时段', name: '夜猫子', desc: '晚上 10 点后完成专注', icon: '🦉', check: s => s.nightOwl },
+    { id: 'task_master', group: '任务完成', name: '任务达人', desc: '完成 10 个任务', icon: '✅', metric: 'completedTasks', target: 10, unit: '个', check: s => s.completedTasks >= 10 },
+    { id: 'task_centurion', group: '任务完成', name: '任务收割机', desc: '完成 100 个任务', icon: '🏆', metric: 'completedTasks', target: 100, unit: '个', check: s => s.completedTasks >= 100 },
+    { id: 'total_10h', group: '累计时长', name: '积累者', desc: '累计专注 10 小时', icon: '⏳', metric: 'totalHours', target: 10, unit: '小时', check: s => s.totalHours >= 10 },
+    { id: 'total_100h', group: '累计时长', name: '修行者', desc: '累计专注 100 小时', icon: '🧘', metric: 'totalHours', target: 100, unit: '小时', check: s => s.totalHours >= 100 },
+    { id: 'total_500h', group: '累计时长', name: '苦行僧', desc: '累计专注 500 小时', icon: '🏔️', metric: 'totalHours', target: 500, unit: '小时', check: s => s.totalHours >= 500 },
+    { id: 'tomato_crate', group: '专注次数', name: '番茄批发商', desc: '完成 25 次番茄钟，已经不是零售规模', icon: '🧺', metric: 'totalSessions', target: 25, unit: '次', check: s => s.totalSessions >= 25 },
+    { id: 'focus_404', group: '专注次数', name: '摸鱼页面不存在', desc: '完成 404 次专注，摸鱼请求返回 Not Found', icon: '🖥️', metric: 'totalSessions', target: 404, unit: '次', check: s => s.totalSessions >= 404 },
+    { id: 'focus_666', group: '专注次数', name: '专注上头', desc: '完成 666 次专注，计时器开始怕你', icon: '😈', metric: 'totalSessions', target: 666, unit: '次', check: s => s.totalSessions >= 666 },
+    { id: 'human_timer', group: '累计时长', name: '人形计时器', desc: '累计专注 1,000 小时，体内可能有石英晶振', icon: '🤖', metric: 'totalHours', target: 1000, unit: '小时', check: s => s.totalHours >= 1000 },
+    { id: 'chair_welded', group: '单日纪录', name: '椅子焊住了', desc: '单日专注达到 8 小时，建议起来走两步', icon: '🪑', metric: 'maxDaily', target: 480, unit: '分钟', check: s => s.maxDaily >= 480 },
+    { id: 'other_side_early_bird', group: '特别时段', name: '地球另一边的早起', desc: '凌晨 0 到 5 点完成专注', icon: '🌍', check: s => s.midnightSession },
+    { id: 'rice_can_wait', group: '特别时段', name: '饭可以晚点吃', desc: '午饭时段仍在专注；解锁后请先去吃饭', icon: '🍚', check: s => s.lunchSession },
+    { id: 'weekend_warrior', group: '周末专注', name: '周末是什么', desc: '在周末完成 5 次专注', icon: '🛡️', metric: 'weekendSessions', target: 5, unit: '次', check: s => s.weekendSessions >= 5 },
+    { id: 'perfect_tomato', group: '标准番茄', name: '标准件出厂', desc: '完成一次正好 25 分钟的标准番茄', icon: '📏', check: s => s.perfectTwentyFive },
+    { id: 'review_detective', group: '学习复盘', name: '复盘侦探', desc: '写下 10 条复盘，案发现场逐渐清晰', icon: '🕵️', metric: 'reviewCount', target: 10, unit: '条', check: s => s.reviewCount >= 10 },
+    { id: 'subject_octopus', group: '跨类学习', name: '学科八爪鱼', desc: '在 5 个不同分类留下专注记录', icon: '🐙', metric: 'categoryCount', target: 5, unit: '类', check: s => s.categoryCount >= 5 },
+    { id: 'brake_technician', group: '科学休息', name: '刹车也是技术', desc: '合理使用一次提前结束，没有硬熬', icon: '🛑', check: s => s.endedEarlyCount >= 1 },
+  ];
+
+  const generated = [
+    milestoneSeries({ idPrefix: 'session', group: '专注次数', metric: 'totalSessions', icon: '🍅', unit: '次', items: [[2,'梅开二度'],[5,'五颗番茄'],[20,'热身结束'],[75,'渐入佳境'],[150,'专注常客'],[200,'两百回合'],[300,'番茄仓库'],[500,'半千俱乐部'],[800,'八百壮士'],[1000,'千次打卡'],[2000,'两千次不走神'],[5000,'计时器终身会员']] }),
+    milestoneSeries({ idPrefix: 'hours', group: '累计时长', metric: 'totalHours', icon: '⏳', unit: '小时', items: [[1,'第一小时'],[3,'三小时定律'],[5,'小有积累'],[20,'二十小时法则'],[50,'半百小时'],[200,'长期主义'],[300,'三百小时'],[750,'时间富翁'],[1500,'千五修炼'],[3000,'三千小时'],[5000,'五千小时'],[10000,'一万小时传说']] }),
+    milestoneSeries({ idPrefix: 'streak_more', group: '连续坚持', metric: 'currentStreak', icon: '📆', unit: '天', items: [[2,'两天不是巧合'],[5,'工作日全勤'],[14,'双周连胜'],[21,'习惯成形'],[60,'双月坚持'],[90,'季度全勤'],[100,'百日筑基'],[180,'半年不掉线'],[365,'全年在线'],[1000,'千日传说']] }),
+    milestoneSeries({ idPrefix: 'tasks', group: '任务完成', metric: 'completedTasks', icon: '✅', unit: '个', items: [[1,'第一项已完成'],[5,'清单清道夫'],[20,'二十连斩'],[50,'任务搬运工'],[200,'两百件小事'],[300,'待办压缩机'],[500,'任务粉碎机'],[1000,'千项交付'],[2000,'清单无底洞'],[5000,'完成主义者']] }),
+    milestoneSeries({ idPrefix: 'reviews', group: '学习复盘', metric: 'reviewCount', icon: '📝', unit: '条', items: [[1,'第一次回头看'],[3,'三省吾身'],[5,'复盘入门'],[20,'证据收集员'],[50,'错因分析师'],[100,'复盘档案馆'],[300,'学习法医'],[1000,'元认知大师']] }),
+    milestoneSeries({ idPrefix: 'days', group: '学习天数', metric: 'focusDays', icon: '🗓️', unit: '天', items: [[2,'第二个脚印'],[5,'五日有痕'],[10,'十日留档'],[20,'二十天出现'],[30,'月度出勤'],[50,'五十天见证'],[100,'百日足迹'],[200,'两百天记录'],[365,'全年有迹'],[1000,'千日学习史']] }),
+    milestoneSeries({ idPrefix: 'daily', group: '单日纪录', metric: 'maxDaily', icon: '⚡', unit: '分钟', items: [[30,'半小时开机'],[120,'两小时沉浸'],[240,'四小时深潜'],[300,'五小时硬核'],[600,'十小时极限'],[720,'十二小时警报']] }),
+    milestoneSeries({ idPrefix: 'longest', group: '单次纪录', metric: 'longestSession', icon: '🎯', unit: '分钟', items: [[15,'十五分钟启动'],[25,'经典番茄'],[45,'一节课长度'],[60,'整点专注'],[90,'长线深潜'],[120,'两小时结界']] }),
+    milestoneSeries({ idPrefix: 'categories', group: '跨类学习', metric: 'categoryCount', icon: '🧩', unit: '类', items: [[1,'找到方向'],[2,'左右开弓'],[3,'三线推进'],[4,'四门齐开'],[10,'十项全能']] }),
+    milestoneSeries({ idPrefix: 'early_stop', group: '科学休息', metric: 'endedEarlyCount', icon: '🛑', unit: '次', items: [[3,'会踩刹车'],[10,'不和疲劳硬刚'],[30,'节奏管理员'],[100,'休息也是计划']] }),
+    milestoneSeries({ idPrefix: 'weekend', group: '周末专注', metric: 'weekendSessions', icon: '🛡️', unit: '次', items: [[1,'周末出勤'],[10,'周末常驻'],[30,'休息日也有节奏'],[100,'周末守望者']] }),
+    milestoneSeries({ idPrefix: 'perfect25', group: '标准番茄', metric: 'perfectTwentyFiveCount', icon: '📏', unit: '次', items: [[5,'五个标准件'],[10,'番茄质检员'],[30,'标准化生产线'],[100,'ISO 25 分钟']] }),
+    milestoneSeries({ idPrefix: 'habits', group: '每日坚持', metric: 'habitCompletions', icon: '🌱', unit: '次', items: [[1,'第一次打卡'],[7,'习惯发芽'],[30,'打卡月卡'],[100,'习惯变本能'],[365,'全年打卡'],[1000,'坚持无需解释']] }),
+  ].flat();
+
+  return Object.freeze([...base, ...generated]);
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = AchievementCatalog;
 
 </script>
   <script>
@@ -4562,7 +4706,7 @@ const ImportHub = {
   const ARCHIVE_KEYS = [
     'focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings',
     'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports',
-    'dailyData', 'appSettings', 'deepseekSettings',
+    'dailyData', 'memoData', 'appSettings', 'deepseekSettings',
     'currentStudyGoal', 'dayClosePromptedDate'
   ];
   const HISTORY_KEYS = ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries'];
@@ -4957,7 +5101,7 @@ const ImportHub = {
   <script>
 const SyncManager = {
   latestSchemaVersion: typeof VsrArchiveCore !== 'undefined' ? VsrArchiveCore.SNAPSHOT_SCHEMA_VERSION : 3,
-  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
+  manualKeys: ['focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings', 'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports', 'memoData', 'appSettings', 'deepseekSettings', 'currentStudyGoal', 'dayClosePromptedDate'],
   settingsKey: 'syncSettings',
   stateKey: 'syncState',
   inFlight: null,
@@ -7226,6 +7370,7 @@ const Stats = {
     let sessionReviews = [];
     let dailyCloseEntries = [];
     let weeklyReports = [];
+    let memoData = {};
     let appSettings = {};
     let deepseekSettings = {};
     try { tasks = JSON.parse(localStorage.getItem('tasks') || '[]'); } catch (e) {}
@@ -7238,6 +7383,7 @@ const Stats = {
     try { sessionReviews = JSON.parse(localStorage.getItem('sessionReviews') || '[]'); } catch (e) {}
     try { dailyCloseEntries = JSON.parse(localStorage.getItem('dailyCloseEntries') || '[]'); } catch (e) {}
     try { weeklyReports = JSON.parse(localStorage.getItem('weeklyReports') || '[]'); } catch (e) {}
+    try { memoData = JSON.parse(localStorage.getItem('memoData') || '{}'); } catch (e) {}
     try { appSettings = JSON.parse(localStorage.getItem('appSettings') || '{}'); } catch (e) {}
     try { deepseekSettings = JSON.parse(localStorage.getItem('deepseekSettings') || '{}'); } catch (e) {}
     const deepseekExport = typeof VsrArchiveCore !== 'undefined'
@@ -7257,6 +7403,7 @@ const Stats = {
       sessionReviews,
       dailyCloseEntries,
       weeklyReports,
+      memoData,
       appSettings,
       deepseekSettings: deepseekExport,
       currentStudyGoal: localStorage.getItem('currentStudyGoal') || '',
@@ -7285,6 +7432,84 @@ const Stats = {
     const d = new Date(`${this.getDateString()}T12:00:00`);
     d.setDate(d.getDate() - d.getDay());
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  },
+};
+
+</script>
+  <script>
+const MemoManager = {
+  storageKey: 'memoData',
+  timer: null,
+  data: { text: '', updatedAt: '' },
+
+  init() {
+    this.load();
+    const input = document.getElementById('memo-input');
+    if (!input) return;
+    input.value = this.data.text;
+    this.updateCount();
+    this.renderStatus(this.data.updatedAt ? `已保存 ${this.formatTime(this.data.updatedAt)}` : '自动保存');
+    input.addEventListener('input', () => {
+      this.updateCount();
+      this.renderStatus('正在编辑…');
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.save(), 450);
+    });
+    input.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        this.save();
+      }
+    });
+    document.getElementById('btn-clear-memo')?.addEventListener('click', () => this.clear());
+  },
+
+  load() {
+    try {
+      const stored = JSON.parse(SafeStore.get(this.storageKey, '{}'));
+      this.data = stored && typeof stored === 'object'
+        ? { text: String(stored.text || '').slice(0, 5000), updatedAt: String(stored.updatedAt || '') }
+        : { text: '', updatedAt: '' };
+    } catch (error) {
+      this.data = { text: '', updatedAt: '' };
+    }
+  },
+
+  save() {
+    clearTimeout(this.timer);
+    const input = document.getElementById('memo-input');
+    if (!input) return false;
+    this.data = { text: input.value.slice(0, 5000), updatedAt: new Date().toISOString() };
+    const saved = SafeStore.set(this.storageKey, JSON.stringify(this.data));
+    this.renderStatus(saved ? `已保存 ${this.formatTime(this.data.updatedAt)}` : '保存失败');
+    if (saved && typeof SyncManager !== 'undefined') SyncManager.scheduleUpload?.('memo');
+    return saved;
+  },
+
+  clear() {
+    const input = document.getElementById('memo-input');
+    if (!input || !input.value) return;
+    if (!window.confirm('确定清空备忘录吗？此操作会保存空内容。')) return;
+    input.value = '';
+    this.updateCount();
+    this.save();
+    input.focus();
+  },
+
+  updateCount() {
+    const input = document.getElementById('memo-input');
+    const count = document.getElementById('memo-count');
+    if (input && count) count.textContent = `${input.value.length} / 5000`;
+  },
+
+  renderStatus(text) {
+    const status = document.getElementById('memo-status');
+    if (status) status.textContent = text;
+  },
+
+  formatTime(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   },
 };
 
@@ -7521,42 +7746,12 @@ const GoalManager = {
 const App = {
   theme: 'light',
   achievements: [],
+  achievementFilter: 'all',
   studyDayKey: '',
   dayRefreshTimer: null,
   modalFocus: new WeakMap(),
 
-  // Achievement definitions
-  achievementDefs: [
-    { id: 'first_session', name: '初次专注', desc: '完成第1次番茄钟', icon: '🍅', check: (s) => s.totalSessions >= 1 },
-    { id: 'ten_sessions', name: '专注新手', desc: '完成10次番茄钟', icon: '⭐', check: (s) => s.totalSessions >= 10 },
-    { id: 'fifty_sessions', name: '专注达人', desc: '完成50次番茄钟', icon: '🌟', check: (s) => s.totalSessions >= 50 },
-    { id: 'hundred_sessions', name: '番茄大师', desc: '完成100次番茄钟', icon: '👑', check: (s) => s.totalSessions >= 100 },
-    { id: 'one_hour_today', name: '一小时挑战', desc: '单日专注超1小时', icon: '⏱️', check: (s) => s.maxDaily >= 60 },
-    { id: 'three_hour_today', name: '深度专注', desc: '单日专注超3小时', icon: '🔥', check: (s) => s.maxDaily >= 180 },
-    { id: 'six_hour_today', name: '学霸附体', desc: '单日专注超6小时', icon: '📚', check: (s) => s.maxDaily >= 360 },
-    { id: 'streak_3', name: '三日坚持', desc: '连续3天专注', icon: '📅', check: (s) => s.currentStreak >= 3 },
-    { id: 'streak_7', name: '一周习惯', desc: '连续7天专注', icon: '🗓️', check: (s) => s.currentStreak >= 7 },
-    { id: 'streak_30', name: '月度自律', desc: '连续30天专注', icon: '🏅', check: (s) => s.currentStreak >= 30 },
-    { id: 'early_bird', name: '早起鸟儿', desc: '早上8点前完成专注', icon: '🌅', check: (s) => s.earlyBird },
-    { id: 'night_owl', name: '夜猫子', desc: '晚上10点后完成专注', icon: '🦉', check: (s) => s.nightOwl },
-    { id: 'task_master', name: '任务达人', desc: '完成10个任务', icon: '✅', check: (s) => s.completedTasks >= 10 },
-    { id: 'task_centurion', name: '任务收割机', desc: '完成100个任务', icon: '🏆', check: (s) => s.completedTasks >= 100 },
-    { id: 'total_10h', name: '积累者', desc: '累计专注10小时', icon: '⏳', check: (s) => s.totalHours >= 10 },
-    { id: 'total_100h', name: '修行者', desc: '累计专注100小时', icon: '🧘', check: (s) => s.totalHours >= 100 },
-    { id: 'total_500h', name: '苦行僧', desc: '累计专注500小时', icon: '🏔️', check: (s) => s.totalHours >= 500 },
-    { id: 'tomato_crate', name: '番茄批发商', desc: '完成25次番茄钟，已经不是零售规模', icon: '🧺', check: (s) => s.totalSessions >= 25 },
-    { id: 'focus_404', name: '摸鱼页面不存在', desc: '完成404次专注，摸鱼请求返回 Not Found', icon: '🖥️', check: (s) => s.totalSessions >= 404 },
-    { id: 'focus_666', name: '专注上头', desc: '完成666次专注，计时器开始怕你', icon: '😈', check: (s) => s.totalSessions >= 666 },
-    { id: 'human_timer', name: '人形计时器', desc: '累计专注1000小时，体内可能有石英晶振', icon: '🤖', check: (s) => s.totalHours >= 1000 },
-    { id: 'chair_welded', name: '椅子焊住了', desc: '单日专注达到8小时，建议起来走两步', icon: '🪑', check: (s) => s.maxDaily >= 480 },
-    { id: 'other_side_early_bird', name: '地球另一边的早起', desc: '凌晨0到5点完成专注', icon: '🌍', check: (s) => s.midnightSession },
-    { id: 'rice_can_wait', name: '饭可以晚点吃', desc: '午饭时段仍在专注；解锁后请先去吃饭', icon: '🍚', check: (s) => s.lunchSession },
-    { id: 'weekend_warrior', name: '周末是什么', desc: '在周末完成5次专注', icon: '🛡️', check: (s) => s.weekendSessions >= 5 },
-    { id: 'perfect_tomato', name: '标准件出厂', desc: '完成一次正好25分钟的标准番茄', icon: '📏', check: (s) => s.perfectTwentyFive },
-    { id: 'review_detective', name: '复盘侦探', desc: '写下10条复盘，案发现场逐渐清晰', icon: '🕵️', check: (s) => s.reviewCount >= 10 },
-    { id: 'subject_octopus', name: '学科八爪鱼', desc: '在5个不同分类留下专注记录', icon: '🐙', check: (s) => s.categoryCount >= 5 },
-    { id: 'brake_technician', name: '刹车也是技术', desc: '合理使用一次提前结束，没有硬熬', icon: '🛑', check: (s) => s.endedEarlyCount >= 1 },
-  ],
+  achievementDefs: typeof AchievementCatalog !== 'undefined' ? AchievementCatalog : [],
 
   init() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -7577,6 +7772,7 @@ const App = {
     SyncManager.init();
     Stats.init();
     ReviewManager.init();
+    if (typeof MemoManager !== 'undefined') MemoManager.init();
     if (typeof GoalManager !== 'undefined') GoalManager.init();
     this.startDailyRefresh();
 
@@ -7631,6 +7827,10 @@ const App = {
     const achModal = document.getElementById('achievements-modal');
     achModal.querySelector('.modal-close').addEventListener('click', () => this.closeAchievements());
     achModal.querySelector('.modal-backdrop').addEventListener('click', () => this.closeAchievements());
+    achModal.querySelectorAll('[data-achievement-filter]').forEach(button => button.addEventListener('click', () => {
+      this.achievementFilter = button.dataset.achievementFilter;
+      this.renderAchievements();
+    }));
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -7826,7 +8026,7 @@ const App = {
     // Current streak
     let currentStreak = 0;
     const today = new Date();
-    for (let i = 0; i < 365; i++) {
+    for (let i = 0; i < 5000; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = this.getStudyDateKey(d);
@@ -7855,6 +8055,7 @@ const App = {
       tasks = Array.isArray(storedTasks) ? storedTasks : [];
     } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
+    const habitCompletions = tasks.reduce((sum, task) => sum + (Array.isArray(task.completedDates) ? task.completedDates.length : 0), 0);
     const sessionHours = sessions.map(session => new Date(session.timestamp || session.startedAt || 0).getHours());
     const midnightSession = sessionHours.some(hour => hour >= 0 && hour < 5);
     const lunchSession = sessionHours.some(hour => hour >= 11 && hour < 14);
@@ -7863,6 +8064,9 @@ const App = {
       return date.getDay() === 0 || date.getDay() === 6;
     }).length;
     const perfectTwentyFive = sessions.some(session => Number(session.duration) === 25 && !session.endedEarly);
+    const perfectTwentyFiveCount = sessions.filter(session => Number(session.duration) === 25 && !session.endedEarly).length;
+    const longestSession = sessions.reduce((max, session) => Math.max(max, Number(session.duration) || 0), 0);
+    const focusDays = Object.keys(dailyMap).length;
     const categoryCount = new Set(sessions.map(session => String(session.categoryPath || '').trim()).filter(Boolean)).size;
     const endedEarlyCount = sessions.filter(session => session.endedEarly).length;
     let reviewCount = 0;
@@ -7872,27 +8076,28 @@ const App = {
       reviewCount = (Array.isArray(daily) ? daily.length : 0) + (Array.isArray(perSession) ? perSession.length : 0);
     } catch (error) { reviewCount = 0; }
 
-    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, categoryCount, endedEarlyCount, reviewCount };
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount };
   },
 
   // ---- Achievements ----
 
   checkAchievements() {
     const stats = this.getStats();
-    let newUnlocks = false;
+    const unlockedNow = [];
 
     this.achievementDefs.forEach(def => {
       if (this.achievements.includes(def.id)) return;
       if (def.check(stats)) {
         this.achievements.push(def.id);
-        this.showToast(`🏆 解锁成就: ${def.icon} ${def.name}`);
-        newUnlocks = true;
+        unlockedNow.push(def);
       }
     });
 
-    if (newUnlocks) {
+    if (unlockedNow.length) {
       this.saveState();
       this.updateStreakAndTotal();
+      unlockedNow.slice(0, 3).forEach(def => this.showToast(`🏆 解锁成就: ${def.icon} ${def.name}`));
+      if (unlockedNow.length > 3) this.showToast(`🎉 本次共解锁 ${unlockedNow.length} 个成就，去成就库看看吧`);
     }
   },
 
@@ -7910,17 +8115,34 @@ const App = {
   renderAchievements() {
     const grid = document.getElementById('achievements-grid');
     const stats = this.getStats();
+    const total = this.achievementDefs.length;
+    const unlockedCount = this.achievementDefs.filter(def => this.achievements.includes(def.id)).length;
+    document.getElementById('achievement-unlocked-count').textContent = `${unlockedCount} / ${total}`;
+    document.getElementById('achievement-summary-progress').style.width = `${total ? Math.round(unlockedCount / total * 100) : 0}%`;
+    document.querySelectorAll('[data-achievement-filter]').forEach(button => {
+      const active = button.dataset.achievementFilter === this.achievementFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
 
-    grid.innerHTML = this.achievementDefs.map(def => {
+    const visibleDefs = this.achievementDefs.filter(def => {
+      const unlocked = this.achievements.includes(def.id);
+      return this.achievementFilter === 'all' || (this.achievementFilter === 'unlocked' ? unlocked : !unlocked);
+    });
+    grid.innerHTML = visibleDefs.map(def => {
       const unlocked = this.achievements.includes(def.id);
       const cls = unlocked ? 'unlocked' : 'locked';
+      const current = def.metric ? Math.max(0, Number(stats[def.metric]) || 0) : 0;
+      const progress = def.target ? Math.min(100, Math.round(current / def.target * 100)) : 0;
       return `
-        <div class="achievement-card ${cls}">
+        <article class="achievement-card ${cls}">
           <div class="achievement-icon">${def.icon}</div>
+          <div class="achievement-group">${def.group || '特别成就'}</div>
           <div class="achievement-name">${def.name}</div>
           <div class="achievement-desc">${def.desc}</div>
+          ${def.target ? `<div class="achievement-progress" aria-label="进度 ${progress}%"><i style="width:${progress}%"></i></div><div class="achievement-progress-text">${Math.min(current, def.target).toLocaleString()} / ${def.target.toLocaleString()} ${def.unit || ''}</div>` : ''}
           ${unlocked ? '<div class="achievement-date">已解锁</div>' : ''}
-        </div>
+        </article>
       `;
     }).join('');
   },

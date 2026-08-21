@@ -11,7 +11,7 @@
   const ARCHIVE_KEYS = [
     'focusSessions', 'focusActivity', 'studyPlans', 'tasks', 'timerSettings',
     'courses', 'studyGoals', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports',
-    'dailyData', 'appSettings', 'deepseekSettings',
+    'dailyData', 'memoData', 'appSettings', 'deepseekSettings',
     'currentStudyGoal', 'dayClosePromptedDate'
   ];
   const HISTORY_KEYS = ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries'];

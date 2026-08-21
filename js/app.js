@@ -6,42 +6,12 @@
 const App = {
   theme: 'light',
   achievements: [],
+  achievementFilter: 'all',
   studyDayKey: '',
   dayRefreshTimer: null,
   modalFocus: new WeakMap(),
 
-  // Achievement definitions
-  achievementDefs: [
-    { id: 'first_session', name: '初次专注', desc: '完成第1次番茄钟', icon: '🍅', check: (s) => s.totalSessions >= 1 },
-    { id: 'ten_sessions', name: '专注新手', desc: '完成10次番茄钟', icon: '⭐', check: (s) => s.totalSessions >= 10 },
-    { id: 'fifty_sessions', name: '专注达人', desc: '完成50次番茄钟', icon: '🌟', check: (s) => s.totalSessions >= 50 },
-    { id: 'hundred_sessions', name: '番茄大师', desc: '完成100次番茄钟', icon: '👑', check: (s) => s.totalSessions >= 100 },
-    { id: 'one_hour_today', name: '一小时挑战', desc: '单日专注超1小时', icon: '⏱️', check: (s) => s.maxDaily >= 60 },
-    { id: 'three_hour_today', name: '深度专注', desc: '单日专注超3小时', icon: '🔥', check: (s) => s.maxDaily >= 180 },
-    { id: 'six_hour_today', name: '学霸附体', desc: '单日专注超6小时', icon: '📚', check: (s) => s.maxDaily >= 360 },
-    { id: 'streak_3', name: '三日坚持', desc: '连续3天专注', icon: '📅', check: (s) => s.currentStreak >= 3 },
-    { id: 'streak_7', name: '一周习惯', desc: '连续7天专注', icon: '🗓️', check: (s) => s.currentStreak >= 7 },
-    { id: 'streak_30', name: '月度自律', desc: '连续30天专注', icon: '🏅', check: (s) => s.currentStreak >= 30 },
-    { id: 'early_bird', name: '早起鸟儿', desc: '早上8点前完成专注', icon: '🌅', check: (s) => s.earlyBird },
-    { id: 'night_owl', name: '夜猫子', desc: '晚上10点后完成专注', icon: '🦉', check: (s) => s.nightOwl },
-    { id: 'task_master', name: '任务达人', desc: '完成10个任务', icon: '✅', check: (s) => s.completedTasks >= 10 },
-    { id: 'task_centurion', name: '任务收割机', desc: '完成100个任务', icon: '🏆', check: (s) => s.completedTasks >= 100 },
-    { id: 'total_10h', name: '积累者', desc: '累计专注10小时', icon: '⏳', check: (s) => s.totalHours >= 10 },
-    { id: 'total_100h', name: '修行者', desc: '累计专注100小时', icon: '🧘', check: (s) => s.totalHours >= 100 },
-    { id: 'total_500h', name: '苦行僧', desc: '累计专注500小时', icon: '🏔️', check: (s) => s.totalHours >= 500 },
-    { id: 'tomato_crate', name: '番茄批发商', desc: '完成25次番茄钟，已经不是零售规模', icon: '🧺', check: (s) => s.totalSessions >= 25 },
-    { id: 'focus_404', name: '摸鱼页面不存在', desc: '完成404次专注，摸鱼请求返回 Not Found', icon: '🖥️', check: (s) => s.totalSessions >= 404 },
-    { id: 'focus_666', name: '专注上头', desc: '完成666次专注，计时器开始怕你', icon: '😈', check: (s) => s.totalSessions >= 666 },
-    { id: 'human_timer', name: '人形计时器', desc: '累计专注1000小时，体内可能有石英晶振', icon: '🤖', check: (s) => s.totalHours >= 1000 },
-    { id: 'chair_welded', name: '椅子焊住了', desc: '单日专注达到8小时，建议起来走两步', icon: '🪑', check: (s) => s.maxDaily >= 480 },
-    { id: 'other_side_early_bird', name: '地球另一边的早起', desc: '凌晨0到5点完成专注', icon: '🌍', check: (s) => s.midnightSession },
-    { id: 'rice_can_wait', name: '饭可以晚点吃', desc: '午饭时段仍在专注；解锁后请先去吃饭', icon: '🍚', check: (s) => s.lunchSession },
-    { id: 'weekend_warrior', name: '周末是什么', desc: '在周末完成5次专注', icon: '🛡️', check: (s) => s.weekendSessions >= 5 },
-    { id: 'perfect_tomato', name: '标准件出厂', desc: '完成一次正好25分钟的标准番茄', icon: '📏', check: (s) => s.perfectTwentyFive },
-    { id: 'review_detective', name: '复盘侦探', desc: '写下10条复盘，案发现场逐渐清晰', icon: '🕵️', check: (s) => s.reviewCount >= 10 },
-    { id: 'subject_octopus', name: '学科八爪鱼', desc: '在5个不同分类留下专注记录', icon: '🐙', check: (s) => s.categoryCount >= 5 },
-    { id: 'brake_technician', name: '刹车也是技术', desc: '合理使用一次提前结束，没有硬熬', icon: '🛑', check: (s) => s.endedEarlyCount >= 1 },
-  ],
+  achievementDefs: typeof AchievementCatalog !== 'undefined' ? AchievementCatalog : [],
 
   init() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -62,6 +32,7 @@ const App = {
     SyncManager.init();
     Stats.init();
     ReviewManager.init();
+    if (typeof MemoManager !== 'undefined') MemoManager.init();
     if (typeof GoalManager !== 'undefined') GoalManager.init();
     this.startDailyRefresh();
 
@@ -116,6 +87,10 @@ const App = {
     const achModal = document.getElementById('achievements-modal');
     achModal.querySelector('.modal-close').addEventListener('click', () => this.closeAchievements());
     achModal.querySelector('.modal-backdrop').addEventListener('click', () => this.closeAchievements());
+    achModal.querySelectorAll('[data-achievement-filter]').forEach(button => button.addEventListener('click', () => {
+      this.achievementFilter = button.dataset.achievementFilter;
+      this.renderAchievements();
+    }));
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -311,7 +286,7 @@ const App = {
     // Current streak
     let currentStreak = 0;
     const today = new Date();
-    for (let i = 0; i < 365; i++) {
+    for (let i = 0; i < 5000; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = this.getStudyDateKey(d);
@@ -340,6 +315,7 @@ const App = {
       tasks = Array.isArray(storedTasks) ? storedTasks : [];
     } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
+    const habitCompletions = tasks.reduce((sum, task) => sum + (Array.isArray(task.completedDates) ? task.completedDates.length : 0), 0);
     const sessionHours = sessions.map(session => new Date(session.timestamp || session.startedAt || 0).getHours());
     const midnightSession = sessionHours.some(hour => hour >= 0 && hour < 5);
     const lunchSession = sessionHours.some(hour => hour >= 11 && hour < 14);
@@ -348,6 +324,9 @@ const App = {
       return date.getDay() === 0 || date.getDay() === 6;
     }).length;
     const perfectTwentyFive = sessions.some(session => Number(session.duration) === 25 && !session.endedEarly);
+    const perfectTwentyFiveCount = sessions.filter(session => Number(session.duration) === 25 && !session.endedEarly).length;
+    const longestSession = sessions.reduce((max, session) => Math.max(max, Number(session.duration) || 0), 0);
+    const focusDays = Object.keys(dailyMap).length;
     const categoryCount = new Set(sessions.map(session => String(session.categoryPath || '').trim()).filter(Boolean)).size;
     const endedEarlyCount = sessions.filter(session => session.endedEarly).length;
     let reviewCount = 0;
@@ -357,27 +336,28 @@ const App = {
       reviewCount = (Array.isArray(daily) ? daily.length : 0) + (Array.isArray(perSession) ? perSession.length : 0);
     } catch (error) { reviewCount = 0; }
 
-    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, categoryCount, endedEarlyCount, reviewCount };
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount };
   },
 
   // ---- Achievements ----
 
   checkAchievements() {
     const stats = this.getStats();
-    let newUnlocks = false;
+    const unlockedNow = [];
 
     this.achievementDefs.forEach(def => {
       if (this.achievements.includes(def.id)) return;
       if (def.check(stats)) {
         this.achievements.push(def.id);
-        this.showToast(`🏆 解锁成就: ${def.icon} ${def.name}`);
-        newUnlocks = true;
+        unlockedNow.push(def);
       }
     });
 
-    if (newUnlocks) {
+    if (unlockedNow.length) {
       this.saveState();
       this.updateStreakAndTotal();
+      unlockedNow.slice(0, 3).forEach(def => this.showToast(`🏆 解锁成就: ${def.icon} ${def.name}`));
+      if (unlockedNow.length > 3) this.showToast(`🎉 本次共解锁 ${unlockedNow.length} 个成就，去成就库看看吧`);
     }
   },
 
@@ -395,17 +375,34 @@ const App = {
   renderAchievements() {
     const grid = document.getElementById('achievements-grid');
     const stats = this.getStats();
+    const total = this.achievementDefs.length;
+    const unlockedCount = this.achievementDefs.filter(def => this.achievements.includes(def.id)).length;
+    document.getElementById('achievement-unlocked-count').textContent = `${unlockedCount} / ${total}`;
+    document.getElementById('achievement-summary-progress').style.width = `${total ? Math.round(unlockedCount / total * 100) : 0}%`;
+    document.querySelectorAll('[data-achievement-filter]').forEach(button => {
+      const active = button.dataset.achievementFilter === this.achievementFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
 
-    grid.innerHTML = this.achievementDefs.map(def => {
+    const visibleDefs = this.achievementDefs.filter(def => {
+      const unlocked = this.achievements.includes(def.id);
+      return this.achievementFilter === 'all' || (this.achievementFilter === 'unlocked' ? unlocked : !unlocked);
+    });
+    grid.innerHTML = visibleDefs.map(def => {
       const unlocked = this.achievements.includes(def.id);
       const cls = unlocked ? 'unlocked' : 'locked';
+      const current = def.metric ? Math.max(0, Number(stats[def.metric]) || 0) : 0;
+      const progress = def.target ? Math.min(100, Math.round(current / def.target * 100)) : 0;
       return `
-        <div class="achievement-card ${cls}">
+        <article class="achievement-card ${cls}">
           <div class="achievement-icon">${def.icon}</div>
+          <div class="achievement-group">${def.group || '特别成就'}</div>
           <div class="achievement-name">${def.name}</div>
           <div class="achievement-desc">${def.desc}</div>
+          ${def.target ? `<div class="achievement-progress" aria-label="进度 ${progress}%"><i style="width:${progress}%"></i></div><div class="achievement-progress-text">${Math.min(current, def.target).toLocaleString()} / ${def.target.toLocaleString()} ${def.unit || ''}</div>` : ''}
           ${unlocked ? '<div class="achievement-date">已解锁</div>' : ''}
-        </div>
+        </article>
       `;
     }).join('');
   },
