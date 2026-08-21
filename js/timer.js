@@ -415,7 +415,10 @@ const PomodoroTimer = {
     SafeStore.set('focusSessions', JSON.stringify(sessions));
 
     // Update stats
-    if (typeof Stats !== 'undefined') Stats.needsRefresh = true;
+    if (typeof Stats !== 'undefined') {
+      Stats.needsRefresh = true;
+      Stats.renderDashboardHeatmap?.(sessions);
+    }
     if (typeof App !== 'undefined') {
       App.checkAchievements();
       App.updateStreakAndTotal();

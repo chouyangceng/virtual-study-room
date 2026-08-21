@@ -192,6 +192,7 @@ const App = {
     if (typeof Stats !== 'undefined') {
       Stats.needsRefresh = true;
       Stats.updateDashboardInsights?.();
+      Stats.renderDashboardHeatmap?.();
     }
     this.updateStreakAndTotal();
   },

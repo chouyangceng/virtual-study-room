@@ -117,6 +117,7 @@ test('archive aggregate merges timing and review records across devices without 
     deviceId: 'device-mac-1234', deviceName: 'Mac', createdAt: '2026-08-16T01:00:00Z',
     appData: {
       focusSessions: [{ id: 'session-mac', date: '2026-08-16', duration: 25 }],
+      focusActivity: { '2026-08-14': { attempts: 1, interruptions: 0, sessions: 1, minutes: 25 } },
       sessionReviews: [{ id: 'sr-mac', sessionId: 'session-mac', date: '2026-08-16', result: '完成一节' }],
       weeklyReports: [{ id: 'week-1', weekStart: '2026-08-10', content: '旧稿' }],
       deepseekSettings: { apiKey: 'must-not-leak', model: 'deepseek-chat' },
@@ -126,13 +127,22 @@ test('archive aggregate merges timing and review records across devices without 
     deviceId: 'device-pad-1234', deviceName: '平板', createdAt: '2026-08-16T02:00:00Z',
     appData: {
       focusSessions: [{ id: 'session-pad', date: '2026-08-16', duration: 50 }],
+      focusActivity: { '2026-08-14': { attempts: 2, interruptions: 1, sessions: 1, minutes: 30 } },
       dailyReviews: [{ id: 'review-pad', date: '2026-08-16', result: '复习错题' }],
       weeklyReports: [{ id: 'week-1', weekStart: '2026-08-10', content: '新稿' }],
     }
   });
-  const aggregate = Core.mergeArchiveAppData([{ snapshot: mac }, { snapshot: tablet }]);
+  const olderMac = Core.createSnapshot({
+    deviceId: 'device-mac-1234', deviceName: 'Mac', createdAt: '2026-08-15T01:00:00Z',
+    appData: {
+      focusSessions: [{ id: 'session-mac', date: '2026-08-16', duration: 25 }],
+      focusActivity: { '2026-08-14': { attempts: 9, interruptions: 8, sessions: 7, minutes: 999 } },
+    }
+  });
+  const aggregate = Core.mergeArchiveAppData([{ snapshot: mac }, { snapshot: tablet }, { snapshot: olderMac }]);
   assert.equal(aggregate.devices.length, 2);
   assert.equal(aggregate.appData.focusSessions.length, 2);
+  assert.deepEqual(aggregate.appData.focusActivity['2026-08-14'], { attempts: 3, interruptions: 1, sessions: 2, minutes: 55 });
   assert.equal(aggregate.appData.sessionReviews[0]._archiveDeviceName, 'Mac');
   assert.equal(aggregate.appData.weeklyReports.length, 1);
   assert.equal(aggregate.appData.weeklyReports[0].content, '新稿');

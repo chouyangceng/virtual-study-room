@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260821-1">
+  <link rel="stylesheet" href="css/style.css?v=20260821-2">
 </head>
 <body data-theme="light">
   <!-- Local Lucide icon subset (ISC; see icons/LUCIDE-LICENSE.txt). -->
@@ -196,6 +196,13 @@
           <span class="summary-icon">🔥</span>
           <span id="today-focus-time">今日专注: 0 分钟</span>
         </div>
+        <section class="timer-heatmap-card" aria-labelledby="timer-heatmap-title">
+          <div class="timer-heatmap-heading">
+            <div><small>YEAR IN FOCUS</small><h2 id="timer-heatmap-title">今年专注</h2></div>
+            <button id="btn-open-heatmap-stats" class="text-btn compact" type="button">查看统计</button>
+          </div>
+          <div id="timer-heatmap-grid" class="year-heatmap compact" aria-label="全年专注热力图"></div>
+        </section>
       </section>
 
       <!-- Right: Info Panel -->
@@ -408,7 +415,7 @@
     <div class="modal-backdrop"></div>
     <div class="modal-content glass-panel">
       <div class="modal-header">
-        <h2 id="stats-title">📊 专注统计</h2>
+        <div><h2 id="stats-title">📊 专注统计</h2><p id="stats-data-source" class="modal-subtitle" aria-live="polite">正在读取本机与 Windows 归档数据…</p></div>
         <button class="modal-close" type="button" aria-label="关闭">&times;</button>
       </div>
       <div class="modal-body">
@@ -466,18 +473,9 @@
           </div>
         </div>
         <div class="heatmap-container">
-          <h4>🗓️ 月度专注热力图</h4>
-          <div id="heatmap-grid"></div>
-        <div class="heatmap-legend">
-            <span>少</span>
-            <span class="legend-block level-0"></span>
-            <span class="legend-block level-1"></span>
-            <span class="legend-block level-2"></span>
-            <span class="legend-block level-3"></span>
-            <span class="legend-block level-4"></span>
-          <span>多</span>
+          <h4>🗓️ 全年专注热力图</h4>
+          <div id="heatmap-grid" class="year-heatmap" aria-label="全年专注热力图"></div>
         </div>
-      </div>
         <div class="history-container">
           <div class="history-header">
             <h4>📝 最近专注记录</h4>
@@ -612,18 +610,18 @@
   <script src="js/storage.js"></script>
   <script src="js/achievements.js?v=20260821-1"></script>
   <script src="js/background.js"></script>
-  <script src="js/timer.js?v=20260820-3"></script>
+  <script src="js/timer.js?v=20260821-2"></script>
   <script src="js/templates.js"></script>
   <script src="js/courses.js"></script>
   <script src="js/tasks.js?v=20260820-1"></script>
   <script src="js/plans.js?v=20260816-5"></script>
   <script src="js/import-hub.js"></script>
-  <script src="shared/archive-core.js?v=20260821-1"></script>
+  <script src="shared/archive-core.js?v=20260821-2"></script>
   <script src="js/sync.js?v=20260821-1"></script>
   <script src="js/reviews.js?v=20260820-2"></script>
-  <script src="js/stats.js?v=20260821-1"></script>
+  <script src="js/stats.js?v=20260821-2"></script>
   <script src="js/memos.js?v=20260821-1"></script>
   <script src="js/goals.js?v=20260820-1"></script>
-  <script src="js/app.js?v=20260821-1"></script>
+  <script src="js/app.js?v=20260821-2"></script>
 </body>
 </html>

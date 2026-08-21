@@ -162,6 +162,7 @@
     const sources = Array.isArray(entries) ? entries : [];
     const arrayKeys = ['focusSessions', 'dailyReviews', 'sessionReviews', 'dailyCloseEntries', 'weeklyReports'];
     const maps = Object.fromEntries(arrayKeys.map(key => [key, new Map()]));
+    const activityByDevice = new Map();
     const devices = new Map();
     sources
       .filter(entry => entry && entry.snapshot && validateSnapshot(entry.snapshot, { allowOlder: true }).ok)
@@ -189,6 +190,12 @@
             });
           });
         });
+        const activity = appData.focusActivity && typeof appData.focusActivity === 'object' && !Array.isArray(appData.focusActivity)
+          ? appData.focusActivity : {};
+        Object.entries(activity).forEach(([date, value]) => {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !value || typeof value !== 'object') return;
+          activityByDevice.set(`${device.id}\u0000${date}`, { date, value: clone(value) });
+        });
       });
     const appData = {};
     arrayKeys.forEach(key => {
@@ -198,6 +205,14 @@
         return (Number(left.startedAt) || Number(left.timestamp) || Number(left.createdAt) || 0)
           - (Number(right.startedAt) || Number(right.timestamp) || Number(right.createdAt) || 0);
       });
+    });
+    appData.focusActivity = {};
+    activityByDevice.forEach(({ date, value }) => {
+      const target = appData.focusActivity[date] || { attempts: 0, interruptions: 0, sessions: 0, minutes: 0 };
+      ['attempts', 'interruptions', 'sessions', 'minutes'].forEach(key => {
+        target[key] += Math.max(0, Number(value[key]) || 0);
+      });
+      appData.focusActivity[date] = target;
     });
     return { devices: [...devices.values()], appData };
   }

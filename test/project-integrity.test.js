@@ -14,6 +14,7 @@ test('desktop packaging icons exist in the repository', () => {
   assert.equal(exists(pkg.build.mac.icon), true, `missing macOS icon: ${pkg.build.mac.icon}`);
   assert.equal(exists('icons/app-icon-v2.ico'), true, 'missing Electron Windows window icon');
   assert.equal(exists('icons/icon-512.png'), true, 'missing Electron macOS window icon');
+  assert.equal(pkg.build.files.includes('vendor/**/*'), true, 'desktop package must include local Chart.js/XLSX vendors');
 });
 
 test('manifest and local HTML resources exist', () => {

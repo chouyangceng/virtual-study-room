@@ -8,6 +8,8 @@ const Stats = {
   monthlyChart: null,
   categoryChart: null,
   needsRefresh: true,
+  displaySessions: [],
+  displayActivity: {},
 
   getTextColor() {
     const style = getComputedStyle(document.documentElement);
@@ -24,16 +26,20 @@ const Stats = {
     document.getElementById('stats-modal').querySelector('.modal-backdrop').addEventListener('click', () => this.closeModal());
     document.getElementById('btn-export-data').addEventListener('click', () => this.exportData());
     document.getElementById('btn-clear-history').addEventListener('click', () => this.clearHistory());
+    document.getElementById('btn-open-heatmap-stats')?.addEventListener('click', () => this.openModal());
     document.querySelectorAll('[data-chart-retry]').forEach(button => button.addEventListener('click', () => {
-      const sessions = this.getSessions();
+      const sessions = this.displaySessions.length ? this.displaySessions : this.getSessions();
       if (button.dataset.chartRetry === 'weekly') this.renderWeeklyChart(sessions);
       if (button.dataset.chartRetry === 'monthly') this.renderMonthlyChart(sessions);
     }));
+    this.renderDashboardHeatmap(this.getSessions());
   },
 
   openModal() {
     document.getElementById('stats-modal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    const source = document.getElementById('stats-data-source');
+    if (source) source.textContent = '正在汇总本机与 Windows 归档数据…';
     requestAnimationFrame(() => requestAnimationFrame(() => this.refresh()));
   },
 
@@ -49,18 +55,68 @@ const Stats = {
     } catch(e) { return []; }
   },
 
-  refresh() {
+  getLocalActivity() {
+    try {
+      const activity = JSON.parse(localStorage.getItem('focusActivity') || '{}');
+      return activity && typeof activity === 'object' && !Array.isArray(activity) ? activity : {};
+    } catch (error) { return {}; }
+  },
+
+  sessionIdentity(session) {
+    if (!session || typeof session !== 'object') return '';
+    if (session.id !== undefined && session.id !== null && String(session.id)) return `id:${String(session.id)}`;
+    return ['date', 'timestamp', 'startedAt', 'duration', 'type', 'sessionName', 'taskId']
+      .map(key => String(session[key] ?? '')).join('\u0000');
+  },
+
+  mergeSessions(localSessions, archivedSessions) {
+    const merged = new Map();
+    localSessions.forEach((session, index) => {
+      const identity = this.sessionIdentity(session);
+      if (identity) merged.set(identity, { ...session, _localIndex: index, _archiveOnly: false });
+    });
+    (Array.isArray(archivedSessions) ? archivedSessions : []).forEach(session => {
+      const identity = this.sessionIdentity(session);
+      if (!identity || merged.has(identity)) return;
+      merged.set(identity, { ...session, _archiveOnly: true });
+    });
+    return [...merged.values()];
+  },
+
+  async refresh() {
     this.needsRefresh = false;
-    const sessions = this.getSessions();
-    this.updateSummaryCards(sessions);
+    const localSessions = this.getSessions();
+    let sessions = this.mergeSessions(localSessions, []);
+    let activity = this.getLocalActivity();
+    let devices = [];
+    try {
+      const aggregate = typeof SyncManager !== 'undefined' ? await SyncManager.fetchArchiveAggregate() : null;
+      if (aggregate?.appData) {
+        sessions = this.mergeSessions(localSessions, aggregate.appData.focusSessions);
+        activity = aggregate.appData.focusActivity || activity;
+        devices = Array.isArray(aggregate.devices) ? aggregate.devices : [];
+      }
+    } catch (error) {
+      console.warn('读取 Windows 归档统计失败，将显示本机数据', error);
+    }
+    this.displaySessions = sessions;
+    this.displayActivity = activity;
+    const source = document.getElementById('stats-data-source');
+    if (source) {
+      const names = [...new Set(devices.map(device => device.name).filter(Boolean))];
+      source.textContent = names.length
+        ? `已汇总 ${names.join(' + ')} · ${sessions.length} 条专注记录`
+        : `当前显示本机数据 · ${sessions.length} 条专注记录`;
+    }
+    this.updateSummaryCards(sessions, activity);
     this.renderWeeklyChart(sessions);
     this.renderMonthlyChart(sessions);
     this.renderCategoryChart(sessions);
-    this.renderHeatmap(sessions);
+    this.renderHeatmaps(sessions);
     this.renderHistory(sessions);
   },
 
-  updateSummaryCards(sessions) {
+  updateSummaryCards(sessions, activitySource = this.displayActivity) {
     const today = this.getDateString();
     const weekStart = this.getWeekStart();
     const todayMinutes = sessions
@@ -73,7 +129,7 @@ const Stats = {
 
     const totalMinutes = sessions.reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
     const averageMinutes = sessions.length ? totalMinutes / sessions.length : 0;
-    const activity = this.getActivityTotals();
+    const activity = this.getActivityTotals(activitySource);
     const completionRate = activity.attempts > 0
       ? Math.min(100, Math.round((sessions.length / activity.attempts) * 100))
       : (sessions.length ? 100 : null);
@@ -85,9 +141,7 @@ const Stats = {
     this.updateDashboardInsights(sessions);
   },
 
-  getActivityTotals() {
-    let activity = {};
-    try { activity = JSON.parse(localStorage.getItem('focusActivity') || '{}'); } catch (e) {}
+  getActivityTotals(activity = this.getLocalActivity()) {
     return Object.values(activity || {}).reduce((total, day) => ({
       attempts: total.attempts + (Number(day.attempts) || 0),
       interruptions: total.interruptions + (Number(day.interruptions) || 0),
@@ -366,62 +420,66 @@ const Stats = {
     if (text && message) text.textContent = message;
   },
 
-  renderHeatmap(sessions) {
-    const grid = document.getElementById('heatmap-grid');
-    grid.innerHTML = '';
+  renderDashboardHeatmap(sessions = this.getSessions()) {
+    this.renderYearHeatmap(sessions, 'timer-heatmap-grid');
+  },
 
+  renderHeatmaps(sessions) {
+    this.renderYearHeatmap(sessions, 'heatmap-grid');
+    this.renderDashboardHeatmap(sessions);
+  },
+
+  heatLevel(minutes) {
+    if (minutes >= 180) return 4;
+    if (minutes >= 90) return 3;
+    if (minutes >= 30) return 2;
+    return minutes > 0 ? 1 : 0;
+  },
+
+  renderYearHeatmap(sessions, targetId) {
+    const container = document.getElementById(targetId);
+    if (!container) return;
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfWeek = new Date(year, month, 1).getDay();
-
-    const weekHeaders = ['日', '一', '二', '三', '四', '五', '六'];
-    weekHeaders.forEach(d => {
-      const el = document.createElement('div');
-      el.className = 'heatmap-day-header';
-      el.textContent = d;
-      grid.appendChild(el);
-    });
-
-    // Empty cells before first day
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      const el = document.createElement('div');
-      grid.appendChild(el);
-    }
-
-    // Build a lookup of minutes per day
+    const first = new Date(year, 0, 1, 12);
+    const start = new Date(first);
+    start.setDate(start.getDate() - start.getDay());
+    const last = new Date(year, 11, 31, 12);
+    const end = new Date(last);
+    end.setDate(end.getDate() + (6 - end.getDay()));
+    const weekCount = Math.round((end - start) / 604800000) + 1;
     const lookup = {};
-    sessions.forEach(s => {
-      if (String(s.date || '').startsWith(`${year}-${String(month+1).padStart(2,'0')}`)) {
-        lookup[s.date] = (lookup[s.date] || 0) + (Number(s.duration) || 0);
-      }
+    sessions.forEach(session => {
+      const key = String(session?.date || '');
+      if (!key.startsWith(`${year}-`)) return;
+      lookup[key] = (lookup[key] || 0) + Math.max(0, Number(session.duration) || 0);
     });
-
-    const today = new Date().getDate();
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const mins = lookup[key] || 0;
-      let level = 0;
-      if (mins > 0) level = 1;
-      if (mins >= 30) level = 2;
-      if (mins >= 90) level = 3;
-      if (mins >= 180) level = 4;
-
-      const el = document.createElement('div');
-      el.className = `heatmap-cell level-${level}`;
-      el.title = `${key}: ${mins} 分钟`;
-      if (d === today) el.style.border = '2px solid var(--accent)';
-      grid.appendChild(el);
-    }
-
-    // Fill remaining cells
-    const totalCells = firstDayOfWeek + daysInMonth;
-    const remainder = (7 - (totalCells % 7)) % 7;
-    for (let i = 0; i < remainder; i++) {
-      const el = document.createElement('div');
-      grid.appendChild(el);
+    const activeDays = Object.values(lookup).filter(minutes => minutes > 0).length;
+    const totalMinutes = Object.values(lookup).reduce((sum, minutes) => sum + minutes, 0);
+    container.innerHTML = `<div class="year-heatmap-scroll"><div class="heatmap-months" aria-hidden="true"></div><div class="heatmap-body"><div class="heatmap-weekdays" aria-hidden="true"><span></span><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span></div><div class="heatmap-year-grid" role="grid"></div></div></div><div class="heatmap-footer"><span>${year} 年 · ${activeDays} 个专注日 · ${(totalMinutes / 60).toFixed(1)} 小时</span><span class="heatmap-legend"><span>少</span><i class="level-0"></i><i class="level-1"></i><i class="level-2"></i><i class="level-3"></i><i class="level-4"></i><span>多</span></span></div>`;
+    const months = container.querySelector('.heatmap-months');
+    const grid = container.querySelector('.heatmap-year-grid');
+    months.style.setProperty('--heatmap-weeks', weekCount);
+    grid.style.setProperty('--heatmap-weeks', weekCount);
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    monthNames.forEach((name, month) => {
+      const monthStart = new Date(year, month, 1, 12);
+      const week = Math.floor((monthStart - start) / 604800000) + 1;
+      const label = document.createElement('span');
+      label.textContent = name;
+      label.style.gridColumn = String(week);
+      months.appendChild(label);
+    });
+    for (const cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+      const key = this.getDayKey(cursor);
+      const minutes = lookup[key] || 0;
+      const cell = document.createElement('span');
+      const outsideYear = cursor.getFullYear() !== year;
+      cell.className = `heatmap-cell level-${outsideYear ? 0 : this.heatLevel(minutes)}${outsideYear ? ' outside-year' : ''}${key === this.getDayKey(now) ? ' today' : ''}`;
+      cell.setAttribute('role', 'gridcell');
+      cell.setAttribute('aria-label', `${key}，专注 ${minutes} 分钟`);
+      cell.title = `${key} · ${minutes} 分钟`;
+      grid.appendChild(cell);
     }
   },
 
@@ -444,9 +502,11 @@ const Stats = {
         ? new Date(session.timestamp).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
         : `${session.date || '未知日期'}`;
       const duration = Number(session.duration) || 0;
+      const origin = session._archiveDeviceName ? ` · ${this.escape(session._archiveDeviceName)}` : '';
+      const deleteButton = session._archiveOnly ? '' : `<button class="history-delete" type="button" data-index="${session._localIndex}" title="删除这条记录" aria-label="删除这条记录">×</button>`;
       return `<div class="history-row">
-        <div><strong>${this.escape(session.sessionName || session.subjectName || (session.type === 'work' ? '专注' : '休息'))}</strong><span>${this.escape(date)}${session.subjectName ? ` · ${this.escape(session.subjectName)}` : ''}</span></div>
-        <div class="history-duration">${duration} 分钟 <button class="history-delete" type="button" data-index="${session._index}" title="删除这条记录" aria-label="删除这条记录">×</button></div>
+        <div><strong>${this.escape(session.sessionName || session.subjectName || (session.type === 'work' ? '专注' : '休息'))}</strong><span>${this.escape(date)}${session.subjectName ? ` · ${this.escape(session.subjectName)}` : ''}${origin}</span></div>
+        <div class="history-duration">${duration} 分钟 ${deleteButton}</div>
       </div>`;
     }).join('');
 
