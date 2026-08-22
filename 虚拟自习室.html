@@ -3199,6 +3199,18 @@ const AchievementCatalog = (() => {
     check: stats => (Number(stats[metric]) || 0) >= target,
   }));
 
+  const playfulSeries = ({ idPrefix, group, metric, icon, unit, items }) => items.map(([target, name, desc]) => ({
+    id: `fun_${idPrefix}_${target}`,
+    group,
+    metric,
+    target,
+    unit,
+    name,
+    desc,
+    icon,
+    check: stats => (Number(stats[metric]) || 0) >= target,
+  }));
+
   const base = [
     { id: 'first_session', group: '专注次数', name: '初次专注', desc: '完成第 1 次番茄钟', icon: '🍅', metric: 'totalSessions', target: 1, unit: '次', check: s => s.totalSessions >= 1 },
     { id: 'ten_sessions', group: '专注次数', name: '专注新手', desc: '完成 10 次番茄钟', icon: '⭐', metric: 'totalSessions', target: 10, unit: '次', check: s => s.totalSessions >= 10 },
@@ -3247,7 +3259,251 @@ const AchievementCatalog = (() => {
     milestoneSeries({ idPrefix: 'habits', group: '每日坚持', metric: 'habitCompletions', icon: '🌱', unit: '次', items: [[1,'第一次打卡'],[7,'习惯发芽'],[30,'打卡月卡'],[100,'习惯变本能'],[365,'全年打卡'],[1000,'坚持无需解释']] }),
   ].flat();
 
-  return Object.freeze([...base, ...generated]);
+  // 200 个轻松、可爱、可通过真实学习行为逐步达成的成就。
+  const playful = [
+    playfulSeries({ idPrefix: 'sessions', group: '番茄游乐园', metric: 'totalSessions', icon: '🍅', unit: '次', items: [
+      [3, '三颗小番茄排排坐', '完成 3 次专注，番茄们开始排队点名'],
+      [8, '番茄八宝粥', '完成 8 次专注，今日配方：认真八勺'],
+      [15, '这不是偶然', '完成 15 次专注，已经不能说是手滑了'],
+      [30, '三十而番', '完成 30 次专注，番茄也到了稳重的年纪'],
+      [60, '一筐红彤彤', '完成 60 次专注，小筐已经装不下啦'],
+      [120, '番茄开大会', '完成 120 次专注，全体番茄一致通过继续努力'],
+      [240, '不投降俱乐部', '完成 240 次专注，会员卡由计时器亲自盖章'],
+      [360, '全方位认真', '完成 360 次专注，认真得没有视觉死角'],
+      [520, '我爱学习五二零', '完成 520 次专注，向知识发送一封情书'],
+      [800, '八百番茄过大江', '完成 800 次专注，场面壮观且没有一颗摸鱼'],
+    ] }),
+    playfulSeries({ idPrefix: 'hours', group: '时间魔法', metric: 'totalHours', icon: '⏳', unit: '小时', items: [
+      [2, '时间揉成小面团', '累计 2 小时，时间已经被你揉得服服帖帖'],
+      [8, '认真一整盒', '累计 8 小时，刚好装满一盒踏实'],
+      [15, '半个月亮充电站', '累计 15 小时，月亮替你亮了一小格'],
+      [30, '时间存钱罐', '累计 30 小时，摇一摇全是努力的声音'],
+      [60, '分钟们抱团了', '累计 60 小时，零散分钟成功组成小队'],
+      [120, '时间双层巴士', '累计 120 小时，认真坐满上下两层'],
+      [240, '专注小宇宙', '累计 240 小时，小宇宙稳定发光'],
+      [365, '每天一小时的影子', '累计 365 小时，像给一年画了一圈金边'],
+      [520, '时间也会说爱你', '累计 520 小时，每一小时都回信了'],
+      [800, '八百小时云朵', '累计 800 小时，努力已经蓬松成云'],
+    ] }),
+    playfulSeries({ idPrefix: 'days', group: '脚印收集', metric: 'focusDays', icon: '🐾', unit: '天', items: [
+      [3, '三枚梅花脚印', '有 3 天留下专注记录，小爪印清晰可见'],
+      [7, '一周脚印贴纸', '有 7 天留下专注记录，贴纸册翻开第一页'],
+      [14, '脚印排成小火车', '有 14 天专注，小火车开始呜呜前进'],
+      [21, '路线逐渐清晰', '有 21 天专注，已经走出自己的学习小路'],
+      [30, '月亮见过你三十次', '有 30 天专注，月亮表示你很眼熟'],
+      [60, '双月脚印地图', '有 60 天专注，地图上出现了可爱密集区'],
+      [90, '季度散步冠军', '有 90 天专注，知识公园的路都走熟了'],
+      [180, '半年足迹博物馆', '有 180 天专注，每个脚印都值得展出'],
+      [270, '九个月小旅程', '有 270 天专注，背包里装满了进步'],
+      [365, '全年到此一游', '有 365 天专注，给这一年盖满纪念章'],
+    ] }),
+    playfulSeries({ idPrefix: 'streak', group: '连续剧场', metric: 'currentStreak', icon: '🔥', unit: '天', items: [
+      [4, '连续剧第四集', '连续专注 4 天，剧情终于开始上头'],
+      [6, '差一天召唤神龙', '连续专注 6 天，再走一步就是整周'],
+      [10, '十连没有歪', '连续专注 10 天，这次抽到的是自律限定款'],
+      [15, '半月不掉线', '连续专注 15 天，网络名称叫坚持'],
+      [21, '习惯孵化成功', '连续专注 21 天，小习惯破壳啦'],
+      [30, '月卡全勤小可爱', '连续专注 30 天，月卡一格没漏'],
+      [45, '坚持加大杯', '连续专注 45 天，请领取超大杯耐心'],
+      [60, '双月连续播出', '连续专注 60 天，本剧暂无停更计划'],
+      [90, '季度不鸽奖', '连续专注 90 天，鸽子看了都惭愧'],
+      [100, '百日圆滚滚', '连续专注 100 天，把坚持养得白白胖胖'],
+    ] }),
+    playfulSeries({ idPrefix: 'tasks', group: '清单萌宠', metric: 'completedTasks', icon: '✅', unit: '个', items: [
+      [3, '勾勾三兄弟', '完成 3 个任务，三个小勾挤在一起取暖'],
+      [8, '清单章鱼在鼓掌', '完成 8 个任务，八只手一起为你鼓掌'],
+      [15, '待办瘦身成功', '完成 15 个任务，清单腰围明显变小'],
+      [30, '勾选键冒烟了', '完成 30 个任务，按钮表示需要一杯水'],
+      [60, '清单梳毛师', '完成 60 个任务，把乱糟糟梳得顺顺的'],
+      [120, '任务饼干吃完啦', '完成 120 个任务，一块不剩但很有营养'],
+      [180, '待办雪人融化了', '完成 180 个任务，大雪球终于变成小水滴'],
+      [250, '清单二百五但很聪明', '完成 250 个任务，数字搞怪，执行认真'],
+      [365, '每天一个小勾勾', '完成 365 个任务，勾勾铺成了一条路'],
+      [500, '任务猫粮五百袋', '完成 500 个任务，清单小猫被喂得很满足'],
+    ] }),
+    playfulSeries({ idPrefix: 'habits', group: '习惯花园', metric: 'habitCompletions', icon: '🌱', unit: '次', items: [
+      [3, '三片小嫩叶', '完成 3 次习惯打卡，嫩叶悄悄探头'],
+      [10, '习惯盆栽不蔫了', '完成 10 次习惯打卡，它确认你会回来'],
+      [21, '小苗会认人了', '完成 21 次习惯打卡，一见你就摇叶子'],
+      [50, '花盆住满努力', '完成 50 次习惯打卡，土里全是认真颗粒'],
+      [100, '百次浇水员', '完成 100 次习惯打卡，获得金色小水壶'],
+      [150, '习惯藤蔓爬墙啦', '完成 150 次习惯打卡，绿色一路向上'],
+      [200, '花园门票永久有效', '完成 200 次习惯打卡，园长就是你'],
+      [250, '习惯精灵搬进来', '完成 250 次习惯打卡，夜里有人帮你守苗'],
+      [300, '三百朵不鸽花', '完成 300 次习惯打卡，这种花只在坚持里开'],
+      [365, '四季花园全图鉴', '完成 365 次习惯打卡，春夏秋冬全部点亮'],
+    ] }),
+    playfulSeries({ idPrefix: 'reviews', group: '复盘侦探社', metric: 'reviewCount', icon: '🔎', unit: '条', items: [
+      [2, '线索有两条', '写下 2 条复盘，侦探帽已经戴好'],
+      [4, '四格学习漫画', '写下 4 条复盘，剧情起承转合齐了'],
+      [8, '错题八卦记者', '写下 8 条复盘，只报道自己的真实现场'],
+      [15, '脑内监控回放员', '写下 15 条复盘，细节一个也不放过'],
+      [30, '学习案卷一小摞', '写下 30 条复盘，桌面开始有专业气息'],
+      [60, '原因捕捉网', '写下 60 条复盘，粗心想逃也会被捞回来'],
+      [90, '九十条小灯泡', '写下 90 条复盘，每条都可能突然亮起'],
+      [120, '复盘放大镜镀金', '写下 120 条复盘，观察力闪闪发亮'],
+      [160, '学习侦探下午茶', '写下 160 条复盘，案件和饼干都处理完了'],
+      [200, '真相只有努力', '写下 200 条复盘，侦探社挂出结案横幅'],
+    ] }),
+    playfulSeries({ idPrefix: 'perfect25', group: '标准番茄工厂', metric: 'perfectTwentyFiveCount', icon: '📏', unit: '次', items: [
+      [2, '双胞胎标准番茄', '完成 2 个标准 25 分钟番茄，大小一模一样'],
+      [4, '四四方方刚刚好', '完成 4 个标准番茄，尺子满意地点头'],
+      [8, '质检员比个耶', '完成 8 个标准番茄，本批全部合格'],
+      [16, '番茄装满小纸箱', '完成 16 个标准番茄，封箱胶带已贴好'],
+      [25, '二十五的二十五次方', '完成 25 个标准番茄，名字听起来很厉害'],
+      [40, '标准件不标准地可爱', '完成 40 个标准番茄，每颗都戴着小帽子'],
+      [60, '一分钟都不多不少', '完成 60 个标准番茄，时间强迫症舒适了'],
+      [80, '番茄流水线唱歌', '完成 80 个标准番茄，机器声像整齐合唱'],
+      [100, '百颗合格贴纸', '完成 100 个标准番茄，贴纸墙亮晶晶'],
+      [150, '皇家番茄质检章', '完成 150 个标准番茄，盖章动作十分优雅'],
+    ] }),
+    playfulSeries({ idPrefix: 'weekend', group: '周末小分队', metric: 'weekendSessions', icon: '🧸', unit: '次', items: [
+      [2, '周末偷偷认真', '周末完成 2 次专注，低调得像一只猫'],
+      [4, '被窝外派专员', '周末完成 4 次专注，成功离开被窝执行任务'],
+      [8, '星期六认识我', '周末完成 8 次专注，日历开始主动打招呼'],
+      [12, '周日也有小目标', '周末完成 12 次专注，目标不大但会发光'],
+      [20, '休息日轻量营业', '周末完成 20 次专注，认真但不过度加班'],
+      [30, '周末番茄野餐会', '周末完成 30 次专注，带上知识和小饼干'],
+      [40, '沙发边界突破者', '周末完成 40 次专注，沙发没能把你封印'],
+      [52, '一年周末打卡册', '周末完成 52 次专注，差不多每周都露过面'],
+      [75, '周末小队资深队员', '周末完成 75 次专注，队徽已经缝在袖口'],
+      [100, '百次周末不躺平', '周末完成 100 次专注，当然也记得好好休息'],
+    ] }),
+    playfulSeries({ idPrefix: 'early', group: '晨光俱乐部', metric: 'earlyBirdCount', icon: '🌅', unit: '次', items: [
+      [1, '太阳还在揉眼睛', '早上 8 点前完成 1 次专注，比太阳先清醒'],
+      [3, '晨光三明治', '早上 8 点前完成 3 次专注，夹的是新鲜脑力'],
+      [5, '小鸟发来好友申请', '早上 8 点前完成 5 次专注，它觉得你很眼熟'],
+      [10, '十次早安回信', '早上 8 点前完成 10 次专注，每次都回复了清晨'],
+      [20, '晨雾导航员', '早上 8 点前完成 20 次专注，雾里也找得到书桌'],
+      [30, '早餐前的小胜利', '早上 8 点前完成 30 次专注，豆浆都替你开心'],
+      [50, '五十枚朝霞邮票', '早上 8 点前完成 50 次专注，寄给未来的自己'],
+      [75, '闹钟礼貌地失业', '早上 8 点前完成 75 次专注，你已经会自己上线'],
+      [100, '百次太阳见面会', '早上 8 点前完成 100 次专注，太阳给你留了前排'],
+      [150, '晨光永久会员', '早上 8 点前完成 150 次专注，会费是规律作息'],
+    ] }),
+    playfulSeries({ idPrefix: 'night', group: '夜猫观察站', metric: 'nightOwlCount', icon: '🦉', unit: '次', items: [
+      [1, '猫头鹰看见你了', '晚上 10 点后完成 1 次专注，然后记得早点睡'],
+      [3, '月亮值班三次', '晚上 10 点后完成 3 次专注，月亮替你签到了'],
+      [5, '夜色小台灯', '晚上 10 点后完成 5 次专注，小台灯轻轻亮着'],
+      [10, '星星围观群众', '晚上 10 点后完成 10 次专注，星星排成一排看你'],
+      [15, '十五次安静频道', '晚上 10 点后完成 15 次专注，世界调成了静音'],
+      [20, '夜猫有健康提醒', '晚上 10 点后完成 20 次专注，猫头鹰提醒别熬太晚'],
+      [30, '月光书签一盒', '晚上 10 点后完成 30 次专注，每枚书签都银闪闪'],
+      [40, '深夜低音模式', '晚上 10 点后完成 40 次专注，动作轻一点别吵醒梦'],
+      [50, '猫头鹰熟客卡', '晚上 10 点后完成 50 次专注，附赠睡眠建议一张'],
+      [75, '星夜巡逻员', '晚上 10 点后完成 75 次专注，巡逻结束请按时休息'],
+    ] }),
+    playfulSeries({ idPrefix: 'morning', group: '上午能量', metric: 'morningSessions', icon: '🥐', unit: '次', items: [
+      [1, '脑袋烤好第一片面包', '上午完成 1 次专注，思路散发烤面包香'],
+      [3, '上午三连拍', '上午完成 3 次专注，每张照片都没有摸鱼'],
+      [7, '早餐能量七格', '上午完成 7 次专注，能量条刚好满格'],
+      [15, '咖啡还没凉', '上午完成 15 次专注，效率比杯子降温更快'],
+      [30, '上午频道常驻嘉宾', '上午完成 30 次专注，主持人已经记住你'],
+      [50, '五十个清醒气泡', '上午完成 50 次专注，脑袋咕嘟咕嘟冒泡'],
+      [75, '阳光桌面管理员', '上午完成 75 次专注，把光线摆得整整齐齐'],
+      [100, '百次上午营业', '上午完成 100 次专注，学习小店从不缺席'],
+      [150, '晨间发动机保养良好', '上午完成 150 次专注，发动机声音又稳又轻'],
+      [200, '上午两百回晴朗', '上午完成 200 次专注，阴天也自带小太阳'],
+    ] }),
+    playfulSeries({ idPrefix: 'afternoon', group: '午后续航', metric: 'afternoonSessions', icon: '🍵', unit: '次', items: [
+      [1, '午后第一口茶', '下午完成 1 次专注，清醒味刚刚好'],
+      [3, '困意被拍了三下', '下午完成 3 次专注，困意抱头逃跑'],
+      [7, '七块午后方糖', '下午完成 7 次专注，甜度来自完成感'],
+      [15, '阳光斜着也认真', '下午完成 15 次专注，影子长了，清单短了'],
+      [30, '午后续航小电池', '下午完成 30 次专注，电量标志稳稳绿色'],
+      [50, '五十次拒绝饭困', '下午完成 50 次专注，眼皮获得支撑结构'],
+      [75, '茶杯见证人', '下午完成 75 次专注，杯沿记得每次认真'],
+      [100, '百次午后不迷路', '下午完成 100 次专注，三点钟也知道方向'],
+      [150, '下午档王牌节目', '下午完成 150 次专注，收视率由知识赞助'],
+      [200, '午后云朵推土机', '下午完成 200 次专注，把困倦云推到一边'],
+    ] }),
+    playfulSeries({ idPrefix: 'evening', group: '晚间灯塔', metric: 'eveningSessions', icon: '🌆', unit: '次', items: [
+      [1, '晚霞旁边写一笔', '傍晚到 10 点前完成 1 次专注，天空替你配色'],
+      [3, '三盏小灯亮了', '晚间完成 3 次专注，桌面像一座温柔灯塔'],
+      [7, '一周晚风打卡', '晚间完成 7 次专注，晚风每次都来旁听'],
+      [15, '晚饭后的清醒甜点', '晚间完成 15 次专注，甜点名叫完成一小步'],
+      [30, '月亮交接班', '晚间完成 30 次专注，你和月亮轮流值班'],
+      [50, '五十束台灯光', '晚间完成 50 次专注，把桌面照成小舞台'],
+      [75, '黄昏收藏家', '晚间完成 75 次专注，收藏了许多不同颜色的天'],
+      [100, '百次晚间稳稳落地', '晚间完成 100 次专注，给每一天一个好收尾'],
+      [150, '夜幕前的整理师', '晚间完成 150 次专注，把白天的知识摆回原位'],
+      [200, '晚间灯塔两百闪', '晚间完成 200 次专注，远处的自己看得到光'],
+    ] }),
+    playfulSeries({ idPrefix: 'short', group: '迷你专注', metric: 'shortSessions', icon: '🐣', unit: '次', items: [
+      [1, '小鸡啄一下', '完成 1 次不超过 15 分钟的专注，小步也算前进'],
+      [3, '三口吃掉小任务', '完成 3 次迷你专注，任务被咔嚓咔嚓吃掉'],
+      [5, '五分钟也不嫌少', '完成 5 次迷你专注，碎片时间被认真接住'],
+      [10, '迷你番茄一小盒', '完成 10 次迷你专注，小巧但颗颗有用'],
+      [20, '启动困难救援队', '完成 20 次迷你专注，先开始就是超级技能'],
+      [30, '三十次轻轻推门', '完成 30 次迷你专注，每次都把门推开一点'],
+      [50, '碎片拼成小星星', '完成 50 次迷你专注，零碎时间开始发光'],
+      [75, '口袋专注收藏家', '完成 75 次迷你专注，随手一摸就有一枚'],
+      [100, '百次说做就做', '完成 100 次迷你专注，启动键已经很熟练'],
+      [150, '小步快跑一百五', '完成 150 次迷你专注，小脚步也能跑很远'],
+    ] }),
+    playfulSeries({ idPrefix: 'long', group: '深潜舱', metric: 'longSessions', icon: '🐋', unit: '次', items: [
+      [1, '第一次戴上潜水镜', '完成 1 次至少 45 分钟的专注，看见更深的知识'],
+      [3, '深海三次呼吸', '完成 3 次长专注，呼吸慢下来，思路沉下去'],
+      [5, '鲸鱼路过五次', '完成 5 次长专注，大块时间里有鲸鱼的影子'],
+      [10, '深潜舱十次出发', '完成 10 次长专注，每次都平安带回收获'],
+      [20, '海底安静俱乐部', '完成 20 次长专注，会员交流方式是点头'],
+      [30, '三十枚深度贝壳', '完成 30 次长专注，每枚贝壳里都有回声'],
+      [50, '五十次沉浸下潜', '完成 50 次长专注，水面上的杂音越来越远'],
+      [75, '深海路线熟练工', '完成 75 次长专注，知道什么时候该上浮休息'],
+      [100, '百次鲸落式认真', '完成 100 次长专注，安静但很有分量'],
+      [150, '深潜舱荣誉船长', '完成 150 次长专注，船长也坚持按时休息'],
+    ] }),
+    playfulSeries({ idPrefix: 'notes', group: '备注小纸条', metric: 'notedSessions', icon: '💌', unit: '次', items: [
+      [1, '写给番茄第一封信', '为 1 次专注写备注，让未来知道当时在忙什么'],
+      [3, '三张便利贴贴歪了', '为 3 次专注写备注，虽然歪但内容很正'],
+      [5, '纸条会排队', '为 5 次专注写备注，小纸条按日期站好'],
+      [10, '十封给未来的短笺', '为 10 次专注写备注，未来的你会收到'],
+      [20, '备注抽屉半满', '为 20 次专注写备注，拉开抽屉全是线索'],
+      [30, '三十张脑内截图', '为 30 次专注写备注，把当时的想法截下来'],
+      [50, '纸条小山丘', '为 50 次专注写备注，风吹过会沙沙响'],
+      [75, '备注邮差很忙', '为 75 次专注写备注，每天都有信要送'],
+      [100, '百封认真来信', '为 100 次专注写备注，收件人一直是更好的自己'],
+      [150, '便利贴星球', '为 150 次专注写备注，纸条多到形成自己的引力'],
+    ] }),
+    playfulSeries({ idPrefix: 'linked', group: '任务牵手', metric: 'taskLinkedSessions', icon: '🤝', unit: '次', items: [
+      [1, '专注和任务牵手了', '完成 1 次绑定任务的专注，目标不再走丢'],
+      [3, '三人手拉手', '完成 3 次绑定任务的专注，队形很整齐'],
+      [5, '目标定位五连准', '完成 5 次绑定任务的专注，每次都知道为何出发'],
+      [10, '任务导航不绕路', '完成 10 次绑定任务的专注，导航语音很欣慰'],
+      [20, '二十次精准投递', '完成 20 次绑定任务的专注，努力都送到正确地址'],
+      [30, '目标和时间成了搭档', '完成 30 次绑定任务的专注，两位配合越来越默契'],
+      [50, '五十根红线没有乱', '完成 50 次绑定任务的专注，每根线都连向目标'],
+      [75, '任务雷达滴滴响', '完成 75 次绑定任务的专注，范围内没有迷茫'],
+      [100, '百次有的放矢', '完成 100 次绑定任务的专注，箭靶为你鼓掌'],
+      [150, '目标管理小红娘', '完成 150 次绑定任务的专注，撮合成功率很高'],
+    ] }),
+    playfulSeries({ idPrefix: 'weeks', group: '周历贴纸', metric: 'activeWeeks', icon: '🗓️', unit: '周', items: [
+      [1, '这一周来过', '在 1 个自然周留下专注，周历贴上一颗星'],
+      [2, '双周小桥', '在 2 个自然周专注，两岸已经连起来'],
+      [4, '四周拼成小方块', '在 4 个自然周专注，月历轮廓出现了'],
+      [6, '六周慢炖锅', '在 6 个自然周专注，坚持正在慢慢入味'],
+      [8, '八周小章鱼', '在 8 个自然周专注，每只手负责一周'],
+      [12, '季度贴纸差不多满', '在 12 个自然周专注，贴纸册很有成就感'],
+      [16, '十六周稳定供应', '在 16 个自然周专注，认真从未断货'],
+      [24, '半年周历亮晶晶', '在 24 个自然周专注，翻页时会反光'],
+      [36, '三十六周长跑补给站', '在 36 个自然周专注，补给是休息和好心情'],
+      [52, '全年周历集齐啦', '在 52 个自然周专注，召唤出完整的一年'],
+    ] }),
+    playfulSeries({ idPrefix: 'productive_days', group: '有效学习日', metric: 'productiveDays', icon: '🌟', unit: '天', items: [
+      [1, '一小时小岛出现', '有 1 天专注至少 60 分钟，海面冒出一座岛'],
+      [3, '三星学习日', '有 3 天专注至少 60 分钟，三颗星靠在一起'],
+      [5, '五天能量餐', '有 5 天专注至少 60 分钟，营养均衡不撑肚子'],
+      [10, '十个扎实小面包', '有 10 天专注至少 60 分钟，每个都烤得刚好'],
+      [20, '二十天发光日历', '有 20 天专注至少 60 分钟，日历开始自带背光'],
+      [30, '整月认真体验券', '有 30 天专注至少 60 分钟，体验券永久留念'],
+      [50, '五十座努力小岛', '有 50 天专注至少 60 分钟，群岛地图完成一半'],
+      [75, '七十五天稳稳充电', '有 75 天专注至少 60 分钟，电池健康度优秀'],
+      [100, '百日有效印章', '有 100 天专注至少 60 分钟，印章盖得非常响亮'],
+      [150, '一百五十颗日光糖', '有 150 天专注至少 60 分钟，认真也可以甜甜的'],
+    ] }),
+  ].flat();
+
+  return Object.freeze([...base, ...generated, ...playful]);
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = AchievementCatalog;
@@ -8202,7 +8458,18 @@ const App = {
     } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
     const habitCompletions = tasks.reduce((sum, task) => sum + (Array.isArray(task.completedDates) ? task.completedDates.length : 0), 0);
-    const sessionHours = sessions.map(session => new Date(session.timestamp || session.startedAt || 0).getHours());
+    const timedSessionDates = sessions.map(session => {
+      const raw = session.timestamp || session.startedAt;
+      if (!raw) return null;
+      const date = new Date(raw);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }).filter(Boolean);
+    const sessionHours = timedSessionDates.map(date => date.getHours());
+    const earlyBirdCount = sessionHours.filter(hour => hour < 8).length;
+    const nightOwlCount = sessionHours.filter(hour => hour >= 22).length;
+    const morningSessions = sessionHours.filter(hour => hour >= 8 && hour < 12).length;
+    const afternoonSessions = sessionHours.filter(hour => hour >= 12 && hour < 18).length;
+    const eveningSessions = sessionHours.filter(hour => hour >= 18 && hour < 22).length;
     const midnightSession = sessionHours.some(hour => hour >= 0 && hour < 5);
     const lunchSession = sessionHours.some(hour => hour >= 11 && hour < 14);
     const weekendSessions = sessions.filter(session => {
@@ -8215,6 +8482,21 @@ const App = {
     const focusDays = Object.keys(dailyMap).length;
     const categoryCount = new Set(sessions.map(session => String(session.categoryPath || '').trim()).filter(Boolean)).size;
     const endedEarlyCount = sessions.filter(session => session.endedEarly).length;
+    const shortSessions = sessions.filter(session => {
+      const duration = Number(session.duration) || 0;
+      return duration > 0 && duration <= 15;
+    }).length;
+    const longSessions = sessions.filter(session => (Number(session.duration) || 0) >= 45).length;
+    const notedSessions = sessions.filter(session => String(session.sessionNote || '').trim()).length;
+    const taskLinkedSessions = sessions.filter(session => String(session.taskId || '').trim()).length;
+    const productiveDays = Object.values(dailyMap).filter(minutes => minutes >= 60).length;
+    const activeWeeks = new Set(sessions.map(session => {
+      const date = session.date ? new Date(`${session.date}T12:00:00`) : new Date(session.timestamp || session.startedAt || 0);
+      if (Number.isNaN(date.getTime()) || date.getFullYear() < 2000) return '';
+      const mondayOffset = (date.getDay() + 6) % 7;
+      date.setDate(date.getDate() - mondayOffset);
+      return this.getStudyDateKey(date);
+    }).filter(Boolean)).size;
     let reviewCount = 0;
     try {
       const daily = JSON.parse(localStorage.getItem('dailyReviews') || '[]');
@@ -8222,7 +8504,7 @@ const App = {
       reviewCount = (Array.isArray(daily) ? daily.length : 0) + (Array.isArray(perSession) ? perSession.length : 0);
     } catch (error) { reviewCount = 0; }
 
-    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount };
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount, earlyBirdCount, nightOwlCount, morningSessions, afternoonSessions, eveningSessions, shortSessions, longSessions, notedSessions, taskLinkedSessions, productiveDays, activeWeeks };
   },
 
   // ---- Achievements ----

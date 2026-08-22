@@ -317,7 +317,18 @@ const App = {
     } catch (e) {}
     const completedTasks = tasks.filter(t => t.completed).length;
     const habitCompletions = tasks.reduce((sum, task) => sum + (Array.isArray(task.completedDates) ? task.completedDates.length : 0), 0);
-    const sessionHours = sessions.map(session => new Date(session.timestamp || session.startedAt || 0).getHours());
+    const timedSessionDates = sessions.map(session => {
+      const raw = session.timestamp || session.startedAt;
+      if (!raw) return null;
+      const date = new Date(raw);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }).filter(Boolean);
+    const sessionHours = timedSessionDates.map(date => date.getHours());
+    const earlyBirdCount = sessionHours.filter(hour => hour < 8).length;
+    const nightOwlCount = sessionHours.filter(hour => hour >= 22).length;
+    const morningSessions = sessionHours.filter(hour => hour >= 8 && hour < 12).length;
+    const afternoonSessions = sessionHours.filter(hour => hour >= 12 && hour < 18).length;
+    const eveningSessions = sessionHours.filter(hour => hour >= 18 && hour < 22).length;
     const midnightSession = sessionHours.some(hour => hour >= 0 && hour < 5);
     const lunchSession = sessionHours.some(hour => hour >= 11 && hour < 14);
     const weekendSessions = sessions.filter(session => {
@@ -330,6 +341,21 @@ const App = {
     const focusDays = Object.keys(dailyMap).length;
     const categoryCount = new Set(sessions.map(session => String(session.categoryPath || '').trim()).filter(Boolean)).size;
     const endedEarlyCount = sessions.filter(session => session.endedEarly).length;
+    const shortSessions = sessions.filter(session => {
+      const duration = Number(session.duration) || 0;
+      return duration > 0 && duration <= 15;
+    }).length;
+    const longSessions = sessions.filter(session => (Number(session.duration) || 0) >= 45).length;
+    const notedSessions = sessions.filter(session => String(session.sessionNote || '').trim()).length;
+    const taskLinkedSessions = sessions.filter(session => String(session.taskId || '').trim()).length;
+    const productiveDays = Object.values(dailyMap).filter(minutes => minutes >= 60).length;
+    const activeWeeks = new Set(sessions.map(session => {
+      const date = session.date ? new Date(`${session.date}T12:00:00`) : new Date(session.timestamp || session.startedAt || 0);
+      if (Number.isNaN(date.getTime()) || date.getFullYear() < 2000) return '';
+      const mondayOffset = (date.getDay() + 6) % 7;
+      date.setDate(date.getDate() - mondayOffset);
+      return this.getStudyDateKey(date);
+    }).filter(Boolean)).size;
     let reviewCount = 0;
     try {
       const daily = JSON.parse(localStorage.getItem('dailyReviews') || '[]');
@@ -337,7 +363,7 @@ const App = {
       reviewCount = (Array.isArray(daily) ? daily.length : 0) + (Array.isArray(perSession) ? perSession.length : 0);
     } catch (error) { reviewCount = 0; }
 
-    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount };
+    return { totalSessions, totalMinutes, totalHours, maxDaily, currentStreak, earlyBird, nightOwl, completedTasks, habitCompletions, midnightSession, lunchSession, weekendSessions, perfectTwentyFive, perfectTwentyFiveCount, longestSession, focusDays, categoryCount, endedEarlyCount, reviewCount, earlyBirdCount, nightOwlCount, morningSessions, afternoonSessions, eveningSessions, shortSessions, longSessions, notedSessions, taskLinkedSessions, productiveDays, activeWeeks };
   },
 
   // ---- Achievements ----
